@@ -138,9 +138,10 @@ bool PFilterTest::getMesh(std::string filename){
   if(!n.getParam("/localization_object", localizationObject)){
     ROS_INFO("Failed to get param");
   }
-  std::string filepath = "/home/bsaund/ros/ros_marsarm/src/gazebo_ray_trace/sdf/" + filename;
+  std::string filepath = "/home/shiyuan/Documents/ros_marsarm/src/gazebo_ray_trace/sdf/" + filename;
   if(localizationObject == "boeing_part") {
-    mesh = importSTL(filepath);
+    
+    mesh = importSTL(filepath); 
     return true;
   }
   throw std::invalid_argument("localization object not recognized by particle filter: "
@@ -205,13 +206,12 @@ void visualize()
 	viewer->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
 	viewer->setBackgroundColor (0, 0, 0, v1);
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,1,1, "sample cloud1", v1);
-	viewer->addText("x y z", 15, 120, 20, 1, 1, 1, "v1 text", v1);
+	//viewer->addCoordinateSystem (1.0,v1);
 
 	int v2 = 1;
 	viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
 	viewer->setBackgroundColor (0, 0, 0, v2);
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,1,1, "sample cloud2", v2);
-	viewer->addText("roll pitch yaw", 15, 120, 20, 1, 1, 1, "v2 text", v2);
 	viewer->addCoordinateSystem (1.0);
 	try {
 		while (!viewer->wasStopped ())
@@ -257,7 +257,6 @@ PFilterTest::PFilterTest(int n_particles, particleFilter::cspace b_init[2]) :
   getMesh("boeing_part.stl");
   //int num_voxels[3] = { 200,200,200 };
   //dist_transform(num_voxels);
-  ROS_INFO("start create dist_transform");
   dist_transform = new distanceTransform(num_voxels);
 
   particleFilter::cspace particles[NUM_PARTICLES];
