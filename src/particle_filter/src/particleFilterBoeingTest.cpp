@@ -139,7 +139,7 @@ bool PFilterTest::getMesh(std::string filename){
     ROS_INFO("Failed to get param");
   }
 
-  std::string filepath = "/home/bsaund/ros/ros_marsarm/src/gazebo_ray_trace/sdf/" + localizationObject + ".stl";
+  std::string filepath = "/home/shiyuan/Documents/ros_marsarm/src/gazebo_ray_trace/sdf/" + localizationObject + ".stl";
   // if(localizationObject == "boeing_part") {
   mesh = importSTL(filepath);
     // return true;
