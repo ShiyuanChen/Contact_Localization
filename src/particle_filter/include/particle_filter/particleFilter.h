@@ -54,6 +54,8 @@ class particleFilter
   void calcWeight(double *W, int n_particles, double Xstd_tran, 
 		  cspace *particles0, cspace *particles);
   void resampleParticles(cspace *particles0, cspace *particles, double *W, int n_particles);
+  static void runMetropolisHastings(cspace *mh_state, cspace *particles0, double cur_M[2][3], 
+        distanceTransform *dist_transform, int n_particles, double Xstd_ob, double Xstd_tran);
 };
 void Transform(double measure[2][3], particleFilter::cspace src, double dest[2][3]);
 inline void inverseTransform(double measure[3], particleFilter::cspace src, double dest[3]);
@@ -63,5 +65,6 @@ int getIntersection(vector<vec4x3> &mesh, double pstart[3], double dir[3], doubl
 double testResult(vector<vec4x3> &mesh, double config[6], double touch[2][3], double R);
 int checkObstacles(vector<vec4x3> &mesh, double config[6], double touch[2][3], double dist);
 inline double exp7(double x);
+
 #endif // PARTICLE_FILTER_H
 
