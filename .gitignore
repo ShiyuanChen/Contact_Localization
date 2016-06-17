@@ -1,10 +1,6 @@
 build/*
 devel/*
 .catkin_tools/*
-src/matlab_gen/*
-.#*
-*#
 .#*
 *#
 *~
-
