@@ -162,7 +162,7 @@ int main(int argc, char **argv)
   PlotRayUtils plt;
 
   std::random_device rd;
-  std::normal_distribution<double> randn(0.0,0.0005);
+  std::normal_distribution<double> randn(0.0,0.000000005);
 
   ROS_INFO("Running...");
 
