@@ -253,10 +253,10 @@ int main(int argc, char **argv)
     //tf::Point start(0.95,0,-0.15);
     //tf::Point end(0.95,2,-0.15);
     tf::Point start, end;
-    // randomSelection(plt, start, end);
+    randomSelection(plt, start, end);
     //fixedSelection(plt, start, end, i);
-    start.setValue(tran_start(0, i), tran_start(1, i), tran_start(2, i));
-    end.setValue(tran_end(0, i), tran_end(1, i), tran_end(2, i));
+    // start.setValue(tran_start(0, i), tran_start(1, i), tran_start(2, i));
+    // end.setValue(tran_end(0, i), tran_end(1, i), tran_end(2, i));
     tf::Point intersection;
     if(!getIntersection(plt, start, end, intersection)){
       ROS_INFO("NO INTERSECTION, Skipping");
