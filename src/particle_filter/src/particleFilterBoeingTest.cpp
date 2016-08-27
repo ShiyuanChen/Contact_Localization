@@ -143,7 +143,7 @@ bool PFilterTest::getMesh(std::string filename){
     ROS_INFO("Failed to get param");
   }
   std::string filepath = "/home/shiyuan/Documents/ros_marsarm/src/gazebo_ray_trace/sdf/" + filename;
-  if(localizationObject == "boeing_part") {
+  if(localizationObject == "boeing_part" || localizationObject == "wood_boeing") {
     
     mesh = importSTL(filepath); 
     return true;
@@ -265,7 +265,8 @@ PFilterTest::PFilterTest(int n_particles, particleFilter::cspace b_init[2]) :
   srv_add_obs = n.advertiseService("/particle_filter_add", &PFilterTest::addObs, this);
   pub_particles = n.advertise<geometry_msgs::PoseArray>("/particles_from_filter", 5);
   ROS_INFO("Testing Boeing");
-  getMesh("boeing_part.stl");
+  // getMesh("boeing_part.stl");
+  getMesh("wood_boeing.stl");
   //int num_voxels[3] = { 200,200,200 };
   //dist_transform(num_voxels);
   dist_transform = new distanceTransform(num_voxels);
