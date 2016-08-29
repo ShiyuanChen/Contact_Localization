@@ -162,7 +162,7 @@ int main(int argc, char **argv)
   PlotRayUtils plt;
 
   std::random_device rd;
-  std::normal_distribution<double> randn(0.0,0.000000005);
+  std::normal_distribution<double> randn(0.0,0.001);
 
   ROS_INFO("Running...");
 
@@ -253,10 +253,10 @@ int main(int argc, char **argv)
     //tf::Point start(0.95,0,-0.15);
     //tf::Point end(0.95,2,-0.15);
     tf::Point start, end;
-    randomSelection(plt, start, end);
+    // randomSelection(plt, start, end);
     //fixedSelection(plt, start, end, i);
-    // start.setValue(tran_start(0, i), tran_start(1, i), tran_start(2, i));
-    // end.setValue(tran_end(0, i), tran_end(1, i), tran_end(2, i));
+    start.setValue(tran_start(0, i), tran_start(1, i), tran_start(2, i));
+    end.setValue(tran_end(0, i), tran_end(1, i), tran_end(2, i));
     tf::Point intersection;
     if(!getIntersection(plt, start, end, intersection)){
       ROS_INFO("NO INTERSECTION, Skipping");
@@ -293,6 +293,9 @@ int main(int argc, char **argv)
   myfile << "\n";
   myfile.close();
   myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace.csv", std::ios::out|std::ios::app);
   myfile << "\n";
   myfile.close();
   ROS_INFO("Finished all action");

@@ -120,6 +120,7 @@ void particleFilter::createParticles(cspace *particles_dest, cspace b_Xprior[2],
  */
 void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss)
 {
+	cout << "Xstd_Ob: " << Xstd_ob << endl;
 	auto timer_begin = std::chrono::high_resolution_clock::now();
 	std::random_device generator;
 	normal_distribution<double> dist2(0, Xstd_scatter);
@@ -187,6 +188,50 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
 	if (est_diff >= 0.005) {
 		converge_count ++;
 	}
+	double dist_part = 0;
+	double part_length = 1.6;
+
+	double state[6] = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
+	Eigen::Matrix<double, 3, 1> part;
+	part << part_length,
+			0,
+			0;
+	Eigen::Matrix3d rotationC;
+	rotationC << cos(state[5]), -sin(state[5]), 0,
+	           sin(state[5]), cos(state[5]), 0,
+	           0, 0, 1;
+	Eigen::Matrix3d rotationB;
+	rotationB << cos(state[4]), 0 , sin(state[4]),
+	           0, 1, 0,
+	           -sin(state[4]), 0, cos(state[4]);
+	Eigen::Matrix3d rotationA;
+	rotationA << 1, 0, 0 ,
+	           0, cos(state[3]), -sin(state[3]),
+	           0, sin(state[3]), cos(state[3]);
+	Eigen::Matrix3d rotationM = rotationC * rotationB * rotationA;
+	Eigen::Matrix<double, 3, 1> displaceM;
+	displaceM << state[0],
+				 state[1],
+				 state[2];
+	Eigen::Matrix<double, 3, 1> tran_part = rotationM * part + displaceM;
+
+	rotationC << cos(particles_mean[5]), -sin(particles_mean[5]), 0,
+	           sin(particles_mean[5]), cos(particles_mean[5]), 0,
+	           0, 0, 1;
+	rotationB << cos(particles_mean[4]), 0 , sin(particles_mean[4]),
+	           0, 1, 0,
+	           -sin(particles_mean[4]), 0, cos(particles_mean[4]);
+	rotationA << 1, 0, 0 ,
+	           0, cos(particles_mean[3]), -sin(particles_mean[3]),
+	           0, sin(particles_mean[3]), cos(particles_mean[3]);
+	rotationM = rotationC * rotationB * rotationA;
+	displaceM << particles_mean[0],
+				 particles_mean[1],
+				 particles_mean[2];
+	Eigen::Matrix<double, 3, 1> tran_diff = rotationM * part + displaceM - tran_part;
+	dist_part = tran_diff.norm();
+	cout << "Estimate workspace diff (1.6m): " << dist_part << endl;
+
 	cout << "Converge count: " << converge_count << endl;
 	cout << "Elapsed time: " << std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count() << endl;
 	total_time += std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count();
@@ -199,6 +244,9 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
 	myfile.close();
 	myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", ios::out|ios::app);
 	myfile << std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count() << ",";
+	myfile.close();
+	myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace.csv", ios::out|ios::app);
+	myfile << dist_part << ",";
 	myfile.close();
 
 
