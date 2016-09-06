@@ -159,7 +159,7 @@ bool PFilterTest::getMesh(std::string filename){
 
 geometry_msgs::PoseArray PFilterTest::getParticlePoseArray()
 {
-  particleFilter::cspace particles[NUM_PARTICLES];
+  std::vector<particleFilter::cspace> particles;
   pFilter_.getAllParticles(particles);
   tf::Transform trans = plt.getTrans();
 
@@ -188,7 +188,7 @@ geometry_msgs::PoseArray PFilterTest::getParticlePoseArray()
 
   particleFilter::cspace particles_est_stat;
   particleFilter::cspace particles_est;
-  pFilter_.estimatedDistribution(particles_est, particles_est_stat);
+  pFilter_.estimateGaussian(particles_est, particles_est_stat);
   geometry_msgs::PoseArray poseArray;
   for(int i=0; i<50; i++){
     tf::Pose pose = poseAt(particles[i]);
@@ -248,7 +248,7 @@ void visualize()
 #endif
 
 PFilterTest::PFilterTest(int n_particles, particleFilter::cspace b_init[2]) :
-  pFilter_(n_particles, b_init, 0.001, 0.0035, 0.0001, 0.00),
+  pFilter_(n_particles, b_init, 0.0005, 0.0035, 0.0001, 0.00),
   num_voxels{200, 200, 200}//,
   //dist_transform(num_voxels)
   // particleFilter (int n_particles,

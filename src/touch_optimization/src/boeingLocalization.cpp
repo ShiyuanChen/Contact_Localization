@@ -242,7 +242,7 @@ int main(int argc, char **argv)
   PlotRayUtils plt;
 
   std::random_device rd;
-  std::normal_distribution<double> randn(0.0,0.001);
+  std::normal_distribution<double> randn(0.0,0.0005);
 
   ROS_INFO("Running...");
 
@@ -375,7 +375,16 @@ int main(int argc, char **argv)
   myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", std::ios::out|std::ios::app);
   myfile << "\n";
   myfile.close();
-  myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace.csv", std::ios::out|std::ios::app);
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_trans.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_rot.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace_max.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace_min.csv", std::ios::out|std::ios::app);
   myfile << "\n";
   myfile.close();
   ROS_INFO("Finished all action");

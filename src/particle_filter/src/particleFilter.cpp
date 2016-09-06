@@ -1,6 +1,5 @@
 #include <string.h>
 #include <iostream>
-#include <fstream>
 #include <random>
 #include <chrono>
 #include <fstream>
@@ -33,7 +32,7 @@ using namespace std;
 #define min2(a,b) (a<b?a:b)
 typedef array<array<float, 3>, 4> vec4x3;
 #define epsilon 0.0001
-#define ARM_LENGTH 0.2
+#define ARM_LENGTH 0.8
 #define N_MIN 50
 #define DISPLACE_INTERVAL 0.015
 #define SAMPLE_RATE 0.50
@@ -58,34 +57,28 @@ int converge_count = 0;
 particleFilter::particleFilter(int n_particles, cspace b_init[2],
 							   double Xstd_ob, double Xstd_tran,
 							   double Xstd_scatter, double R)
-	: numParticles(n_particles), maxNumParticles(n_particles), Xstd_ob(Xstd_ob),
-	  Xstd_tran(Xstd_tran), Xstd_scatter(Xstd_scatter), R(R), firstObs(true)
+  : numParticles(n_particles), maxNumParticles(n_particles), Xstd_ob(Xstd_ob),
+	Xstd_tran(Xstd_tran), Xstd_scatter(Xstd_scatter), R(R)
 {
-	memcpy(b_Xprior, b_init, 2 * sizeof(cspace));
-	//memcpy(b_Xpre, b_Xprior, 2 * sizeof(cspace));
-	particles = new cspace[numParticles];
-	bzero(particles, numParticles*sizeof(cspace));
-	particles0 = new cspace[numParticles];
-	bzero(particles0, numParticles*sizeof(cspace));
-	particles_1 = new cspace[numParticles];
+  b_Xprior[0] = b_init[0];
+  b_Xprior[1] = b_init[1];
+  particles.resize(numParticles);
+  particlesPrev.resize(numParticles);
 
-	createParticles(particles0, b_Xprior, numParticles);
+  createParticles(particlesPrev, b_Xprior, numParticles);
 
-	#ifdef ADAPTIVE_BANDWIDTH
-	Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particles0, cdim, numParticles);
-	Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
-	cov_mat = (mat_centered * mat_centered.adjoint()) / double(mat.cols());
-	cout << cov_mat << endl;
-	#endif
-	//W = new double[numParticles];
+#ifdef ADAPTIVE_BANDWIDTH
+  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
+  cov_mat = (mat_centered * mat_centered.adjoint()) / double(mat.cols());
+  cout << cov_mat << endl;
+#endif
+  //W = new double[numParticles];
 }
-void particleFilter::getAllParticles(cspace *particles_dest)
+
+void particleFilter::getAllParticles(Particles &particles_dest)
 {
-  for(int i=0; i<numParticles; i++){
-    for(int j=0; j<cdim; j++){
-      particles_dest[i][j] = particles0[i][j];
-    }
-  }
+  particles_dest = particlesPrev;
 }
 
 /*
@@ -95,19 +88,17 @@ void particleFilter::getAllParticles(cspace *particles_dest)
  *        n_partcles: number of particles
  * output: none
  */
-void particleFilter::createParticles(cspace *particles_dest, cspace b_Xprior[2],
-	int n_particles)
+void particleFilter::createParticles(Particles &particles_dest, cspace b_Xprior[2],
+									 int n_particles)
 {
-	random_device rd;
-	normal_distribution<double> dist(0, 1);
-	int cdim = sizeof(cspace) / sizeof(double);
-	for (int i = 0; i < n_particles; i++)
-	{
-		for (int j = 0; j < cdim; j++)
-		{
-			particles_dest[i][j] = b_Xprior[0][j] + b_Xprior[1][j] * (dist(rd));
+  random_device rd;
+  normal_distribution<double> dist(0, 1);
+  int cdim = sizeof(cspace) / sizeof(double);
+  for (int i = 0; i < n_particles; i++) {
+		for (int j = 0; j < cdim; j++) {
+		  particles_dest[i][j] = b_Xprior[0][j] + b_Xprior[1][j] * (dist(rd));
 		}
-	}
+  }
 }
 
 /*
@@ -120,153 +111,96 @@ void particleFilter::createParticles(cspace *particles_dest, cspace b_Xprior[2],
  */
 void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss)
 {
+	cspace trueConfig = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
 	cout << "Xstd_Ob: " << Xstd_ob << endl;
 	auto timer_begin = std::chrono::high_resolution_clock::now();
 	std::random_device generator;
 	normal_distribution<double> dist2(0, Xstd_scatter);
 
-	// if (!firstObs) {
-	// 	//bzero(b_Xpre, 2 * sizeof(cspace));
-	// 	for (int k = 0; k < cdim; k++) {
-	// 		for (int j = 0; j < numParticles; j++) {
-	// 			particles0[j][k] += dist2(generator);
-	// 			//b_Xpre[0][k] += particles0[j][k];
-	// 		}
-	// 		/*b_Xpre[0][k] /= numParticles;
-	// 		for (int j = 0; j < numParticles; j++) {
-	// 			b_Xpre[1][k] += SQ(particles0[j][k] - b_Xpre[0][k]);
-	// 		}
-	// 		b_Xpre[1][k] = sqrt(b_Xpre[1][k] / numParticles);*/
-	// 	}
-	// }
 	bool iffar = updateParticles(obs, mesh, dist_transform, miss);
-	if (firstObs)
-	{
-		firstObs = false;
-	}
-	/*else if (iffar == true)
-	{
-		memcpy(particles0, particles_1, numParticles*sizeof(cspace));
-	}*/
-	//calcWeight(W, numParticles, Xstd_tran, particles0, particles);
-	memcpy(particles_1, particles0, numParticles*sizeof(cspace));
-	//resampleParticles(particles0, particles, W, numParticles);
-	memcpy(particles0, particles, numParticles*sizeof(cspace));
-	#ifdef ADAPTIVE_BANDWIDTH
-	Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particles0, cdim, numParticles);
-	Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
-	cov_mat = (mat_centered * mat_centered.adjoint()) / double(mat.cols());
-	#endif
+
+	particlesPrev = particles;
+
+#ifdef ADAPTIVE_BANDWIDTH
+	Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
+  cov_mat = (mat_centered * mat_centered.adjoint()) / double(mat.cols());
+#endif
 	auto timer_end = std::chrono::high_resolution_clock::now();
 	auto timer_dur = timer_end - timer_begin;
 
-	cout << "Estimated Mean: ";
-	for (int k = 0; k < cdim; k++) {
-		particles_mean[k] = 0;
-		for (int j = 0; j < numParticles; j++) {
-			particles_mean[k] += particles0[j][k];
-		}
-		particles_mean[k] /= numParticles;
-		cout << particles_mean[k] << "  ";
-	}
-	cout << endl;
-	cout << "Estimated Std: ";
-	for (int k = 0; k < cdim; k++)
-	{
-		particles_est_stat[k] = 0;
-		for (int j = 0; j < numParticles; j++) {
-			particles_est_stat[k] += SQ(particles0[j][k] - particles_mean[k]);
-		}
-		particles_est_stat[k] = sqrt(particles_est_stat[k] / numParticles);
-		cout << particles_est_stat[k] << "  ";
-	}
-	cout << endl;
+	cspace particles_mean, tmp2;
+  estimateGaussian(particles_mean, tmp2);
 	cout << "Estimate diff: ";
-	double est_diff = sqrt(SQ(particles_mean[0] - 0.3) + SQ(particles_mean[1] - 0.3) + SQ(particles_mean[2] - 0.3)
-			 		    + SQ(particles_mean[3] - 0.5) + SQ(particles_mean[4] - 0.7) + SQ(particles_mean[5] - 0.5));
-	cout << est_diff << endl;
+	double est_diff = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2])
+						           + SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[4] - trueConfig[4]) + SQ(particles_mean[5] - trueConfig[5]));
+  cout << est_diff << endl;
 	if (est_diff >= 0.005) {
 		converge_count ++;
 	}
-	double dist_part = 0;
-	double part_length = 1.6;
-
-	double state[6] = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
-	Eigen::Matrix<double, 3, 1> part;
-	part << part_length,
-			0,
-			0;
-	Eigen::Matrix3d rotationC;
-	rotationC << cos(state[5]), -sin(state[5]), 0,
-	           sin(state[5]), cos(state[5]), 0,
-	           0, 0, 1;
-	Eigen::Matrix3d rotationB;
-	rotationB << cos(state[4]), 0 , sin(state[4]),
-	           0, 1, 0,
-	           -sin(state[4]), 0, cos(state[4]);
-	Eigen::Matrix3d rotationA;
-	rotationA << 1, 0, 0 ,
-	           0, cos(state[3]), -sin(state[3]),
-	           0, sin(state[3]), cos(state[3]);
-	Eigen::Matrix3d rotationM = rotationC * rotationB * rotationA;
-	Eigen::Matrix<double, 3, 1> displaceM;
-	displaceM << state[0],
-				 state[1],
-				 state[2];
-	Eigen::Matrix<double, 3, 1> tran_part = rotationM * part + displaceM;
-
-	rotationC << cos(particles_mean[5]), -sin(particles_mean[5]), 0,
-	           sin(particles_mean[5]), cos(particles_mean[5]), 0,
-	           0, 0, 1;
-	rotationB << cos(particles_mean[4]), 0 , sin(particles_mean[4]),
-	           0, 1, 0,
-	           -sin(particles_mean[4]), 0, cos(particles_mean[4]);
-	rotationA << 1, 0, 0 ,
-	           0, cos(particles_mean[3]), -sin(particles_mean[3]),
-	           0, sin(particles_mean[3]), cos(particles_mean[3]);
-	rotationM = rotationC * rotationB * rotationA;
-	displaceM << particles_mean[0],
-				 particles_mean[1],
-				 particles_mean[2];
-	Eigen::Matrix<double, 3, 1> tran_diff = rotationM * part + displaceM - tran_part;
-	dist_part = tran_diff.norm();
-	cout << "Estimate workspace diff (1.6m): " << dist_part << endl;
-
+	double est_diff_trans = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2]));
+	double est_diff_rot = sqrt(SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[4] - trueConfig[4]) + SQ(particles_mean[5] - trueConfig[5]));
+  
 	cout << "Converge count: " << converge_count << endl;
 	cout << "Elapsed time: " << std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count() << endl;
 	total_time += std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count();
 	cout << "Total time: " << total_time << endl;
-	cout << "Average time: " << total_time / 20.0 << endl << endl;
+	cout << "Average time: " << total_time / 20.0 << endl;
 
-	ofstream myfile;
-	myfile.open("/home/shiyuan/Documents/ros_marsarm/diff.csv", ios::out|ios::app);
-	myfile << est_diff << ",";
-	myfile.close();
-	myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", ios::out|ios::app);
-	myfile << std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count() << ",";
-	myfile.close();
-	myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace.csv", ios::out|ios::app);
-	myfile << dist_part << ",";
-	myfile.close();
+	double euclideanDist[2];
+  calcDistance(mesh, trueConfig, particles_mean, euclideanDist);
+  cout << "Maximum workspace distance: " << euclideanDist[0] << endl;
+  cout << "Minimum workspace distanceL " << euclideanDist[1] << endl << endl;
 
-
-	//Eigen::MatrixXd centered = mat.rowwise() - mat.colwise().mean();
-	//Eigen::MatrixXd cov = (centered.adjoint() * centered) / double(mat.rows() - 1);
-	/*if (particles_est_stat[1] < 0.005 && (abs(particles_est[0] - b_Xpre[0][0])>0.001 ||
-		abs(particles_est[1] - b_Xpre[0][1])>0.001 ||
-		abs(particles_est[2] - b_Xpre[0][2])>0.001 ||
-		abs(particles_est[3] - b_Xpre[0][3])>0.001 ||
-		abs(particles_est[4] - b_Xpre[0][4]) > 0.001 ||
-		abs(particles_est[5] - b_Xpre[0][5]) > 0.001))
-		Xstd_scatter = 0.01;
-	else
-		Xstd_scatter = 0.0001;*/
+  ofstream myfile;
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff.csv", ios::out|ios::app);
+  myfile << est_diff << ",";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", ios::out|ios::app);
+  myfile << std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count() << ",";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_trans.csv", ios::out|ios::app);
+  myfile << est_diff_trans << ",";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_rot.csv", ios::out|ios::app);
+  myfile << est_diff_rot << ",";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace_max.csv", ios::out|ios::app);
+  myfile << euclideanDist[0] << ",";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace_min.csv", ios::out|ios::app);
+  myfile << euclideanDist[1] << ",";
+  myfile.close();
 }
+
+void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
+  cout << "Estimated Mean: ";
+  for (int k = 0; k < cdim; k++) {
+	x_mean[k] = 0;
+	for (int j = 0; j < numParticles; j++) {
+	  x_mean[k] += particlesPrev[j][k];
+	}
+	x_mean[k] /= numParticles;
+	cout << x_mean[k] << "  ";
+  }
+  cout << endl;
+  cout << "Estimated Std: ";
+  for (int k = 0; k < cdim; k++) {
+	x_est_stat[k] = 0;
+	for (int j = 0; j < numParticles; j++) {
+	  x_est_stat[k] += SQ(particlesPrev[j][k] - x_mean[k]);
+	}
+	x_est_stat[k] = sqrt(x_est_stat[k] / numParticles);
+	cout << x_est_stat[k] << "  ";
+  }
+  cout << endl;
+
+}
+
 
 /*
  * Update particles (Build distance transform and sampling)
- * Input: particles_1: estimated particles before previous ones (not used here)
- *        particles0: previous estimated particles
+ * Input: particlesPrev: previous estimated particles
  *        particles: current particles
  *        cur_M: current observation
  *        mesh: object mesh arrays
@@ -278,25 +212,23 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
  */
 bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss)
 {
-	
 	std::unordered_set<string> bins;
 	std::random_device rd;
 	std::normal_distribution<double> dist(0, 1);
 	std::uniform_real_distribution<double> distribution(0, numParticles);
-	int cdim = sizeof(cspace) / sizeof(double);
 	int i = 0;
 	int count = 0;
 	int count2 = 0;
 	int count3 = 0;
 	bool iffar = false;
-	cspace *b_X = particles0;
+	Particles b_X = particlesPrev;
 	int idx = 0;
-	double tempState[6];
+  cspace tempState;
 	double D;
-	//double D2;
 	double cur_inv_M[2][3];
 	int num_Mean = SAMPLE_RATE * numParticles;
-	double **measure_workspace = new double*[num_Mean];
+  std::vector<std::array<double,3>> measure_workspace;
+  measure_workspace.resize(num_Mean);
 	double var_measure[3] = { 0, 0, 0 };
 	cspace meanConfig = { 0, 0, 0, 0, 0, 0 };
 	double unsigned_dist_check = R + 2 * Xstd_ob;
@@ -311,13 +243,12 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 	int count_bar = 0;
 	if (!miss) {
 		for (int t = 0; t < num_Mean; t++) {
-			measure_workspace[t] = new double[3];
 			int index = int(floor(distribution(rd)));
 			//memcpy(sampleConfig[t], b_X[index], sizeof(cspace));
 			for (int m = 0; m < cdim; m++) {
 				meanConfig[m] += b_X[index][m];
 			}
-			inverseTransform(cur_M[0], b_X[index], measure_workspace[t]);
+	  	inverseTransform(cur_M[0], b_X[index], measure_workspace[t].data());
 		}
 		for (int m = 0; m < cdim; m++) {
 			meanConfig[m] /= num_Mean;
@@ -328,9 +259,7 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 			var_measure[0] += SQ(measure_workspace[t][0] - mean_inv_M[0]);
 			var_measure[1] += SQ(measure_workspace[t][1] - mean_inv_M[1]);
 			var_measure[2] += SQ(measure_workspace[t][2] - mean_inv_M[2]);
-			delete [] measure_workspace[t];
 		}
-		delete [] measure_workspace;
 		var_measure[0] /= num_Mean;
 		var_measure[1] /= num_Mean;
 		var_measure[2] /= num_Mean;
@@ -350,7 +279,7 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 		dist_transform->voxelizeSTL(mesh, world_range);
 		dist_transform->build();
 		cout << "Finish building DT !!" << endl;
-		#ifdef ADAPTIVE_BANDWIDTH
+#ifdef ADAPTIVE_BANDWIDTH
 		double coeff = pow(numParticles, -0.2)/1.2155;
 		Eigen::MatrixXd H_cov = coeff * cov_mat;
 		cout << "H_cov: " << H_cov << endl;
@@ -374,36 +303,15 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 		}
 		Eigen::VectorXd samples(cdim, 1);
 		Eigen::VectorXd rot_sample(cdim, 1);
-		#endif
+#endif
 		//cout << "Sampled Co_std_deviation: " << scl << endl;
 		// sample particles
 		//touch_dir << cur_M[1][0], cur_M[1][1], cur_M[1][2];
 
 		while (i < numParticles && i < maxNumParticles)
-		{
-			// if(count > MAX_ITERATION || count2 > 4000 || count3 > 3000)
-			// {
-			// 	H_cov = COV_MULTIPLIER * H_cov;
-			// 	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(H_cov);
-			// 	rot = eigenSolver.eigenvectors(); 
-			// 	scl = eigenSolver.eigenvalues();
-
-			// 	for (int j = 0; j < cdim; j++) {
-			// 	  scl(j, 0) = sqrt(scl(j, 0));
-			// 	}
-			// 	cout << count << "  " << count2 << "  " << count3 << endl;
-			// 	count = 0;
-			// 	count2 = 0;
-			// 	count3 = 0;
-			// 	cout << "increasing !!!" << endl;
-			// 	//cout << "Oops, increase cov_mat" << endl << endl;
-			// 	//cout << " H  : " << H_cov << endl;
-			// 	//cout << "Sampled Co_std_deviation: " << scl << endl;
-			// }
-			
-			
+		{	
 			idx = int(floor(distribution(rd)));
-			#ifdef ADAPTIVE_BANDWIDTH
+#ifdef ADAPTIVE_BANDWIDTH
 			for (int j = 0; j < cdim; j++)
 			{
 				samples(j, 0) = scl(j, 0) * dist(rd);
@@ -414,19 +322,22 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 				/* TODO: use quaternions instead of euler angles */
 				tempState[j] = b_X[idx][j] + rot_sample(j, 0);
 			}
-			#else
+#else
 			for (int j = 0; j < cdim; j++)
 			{
 				/* TODO: use quaternions instead of euler angles */
 				tempState[j] = b_X[idx][j] + Xstd_tran * dist(rd);
 			}
-			#endif
+#endif
 			inverseTransform(cur_M, tempState, cur_inv_M);
 			touch_dir << cur_inv_M[1][0], cur_inv_M[1][1], cur_inv_M[1][2];
 			// reject particles ourside of distance transform
-			if (cur_inv_M[0][0] >= dist_transform->world_range[0][1] || cur_inv_M[0][0] <= dist_transform->world_range[0][0] ||
-				cur_inv_M[0][1] >= dist_transform->world_range[1][1] || cur_inv_M[0][1] <= dist_transform->world_range[1][0] ||
-				cur_inv_M[0][2] >= dist_transform->world_range[2][1] || cur_inv_M[0][2] <= dist_transform->world_range[2][0]) {
+			if (cur_inv_M[0][0] >= dist_transform->world_range[0][1] || 
+					cur_inv_M[0][0] <= dist_transform->world_range[0][0] ||
+					cur_inv_M[0][1] >= dist_transform->world_range[1][1] || 
+					cur_inv_M[0][1] <= dist_transform->world_range[1][0] ||
+					cur_inv_M[0][2] >= dist_transform->world_range[2][1] || 
+					cur_inv_M[0][2] <= dist_transform->world_range[2][0]) {
 				continue;
 			}
 			
@@ -461,7 +372,7 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 				// gradient[1] = dist_adjacent[1] - D;
 				// gradient[2] = dist_adjacent[2] - D;
 				count2 ++;
-				#ifdef COMBINE_RAYCASTING
+#ifdef COMBINE_RAYCASTING
 				if (checkIntersections(mesh, cur_inv_M[0], cur_inv_M[1], ARM_LENGTH, D)) {
 					count_bar ++;
 					if (count_bar > 1000)
@@ -470,7 +381,7 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 				}
 				count_bar = 0;
 				D -= R;
-				#else
+#else
 				if (checkInObject(mesh, cur_inv_M[0]) == 1 && D != 0)
 				{
 					// if (gradient.dot(touch_dir) <= epsilon)
@@ -500,13 +411,13 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 					// 	continue;
 					D = D - R;
 				}
-				#endif
+#endif
 			}
 			else
 				continue;
 			if (D >= -signed_dist_check && D <= signed_dist_check)
 			{
-				#ifndef COMBINE_RAYCASTING	
+#ifndef COMBINE_RAYCASTING	
 				safe_point[1][0] = cur_M[1][0];
 				safe_point[1][1] = cur_M[1][1];
 				safe_point[1][2] = cur_M[1][2];
@@ -521,19 +432,19 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 					continue;
 				}
 				count_bar = 0;
-				#endif
+#endif
 				for (int j = 0; j < cdim; j++)
 				{
 					particles[i][j] = tempState[j];
 				}
-				#ifdef ADAPTIVE_NUMBER
+#ifdef ADAPTIVE_NUMBER
 				if (checkEmptyBin(&bins, particles[i]) == 1) {
 					num_bins++;
 					//if (i >= N_MIN) {
-						numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
+					numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
 					//}
 				}
-				#endif
+#endif
 				//double d = testResult(mesh, particles[i], cur_M, R);
 				//if (d > 0.01)
 				//	cout << cur_inv_M[0][0] << "  " << cur_inv_M[0][1] << "  " << cur_inv_M[0][2] << "   " << d << "   " << D << //"   " << gradient << "   " << gradient.dot(touch_dir) << 
@@ -644,120 +555,137 @@ bool particleFilter::updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, d
 
 int main()
 {
-	vector<vec4x3> mesh = importSTL("boeing_part_binary.stl");
-	int numParticles = 500; // number of particles
-	double Xstd_ob = 0.001;
-	double Xstd_tran = 0.0035;
-	double Xstd_scatter = 0.0001;
-	//double voxel_size = 0.0005; // voxel size for distance transform.
-	int num_voxels[3] = { 200,200,200 };
-	//double range = 0.1; //size of the distance transform
-	double R = 0.001; // radius of the touch probe
+  vector<vec4x3> mesh = importSTL("boeing_part_binary.stl");
+  int numParticles = 500; // number of particles
+  double Xstd_ob = 0.001;
+  double Xstd_tran = 0.0035;
+  double Xstd_scatter = 0.0001;
+  //double voxel_size = 0.0005; // voxel size for distance transform.
+  int num_voxels[3] = { 200,200,200 };
+  //double range = 0.1; //size of the distance transform
+  double R = 0.001; // radius of the touch probe
 
-	double cube_para[3] = { 6, 4, 2 }; // cube size: 6m x 4m x 2m with center at the origin.
-	//double range[3][2] = { {-3.5, 3.5}, {-2.5, 2.5}, {-1.5, 1.5} };
-	particleFilter::cspace X_true = { 2.12, 1.388, 0.818, Pi / 6 + Pi / 400, Pi / 12 + Pi / 220, Pi / 18 - Pi / 180 }; // true state of configuration
-	//particleFilter::cspace X_true = { 0, 0, 0.818, 0, 0, 0 }; // true state of configuration
-	cout << "True state: " << X_true[0] << ' ' << X_true[1] << ' ' << X_true[2] << ' ' 
-		 << X_true[3] << ' ' << X_true[4] << ' ' << X_true[5] << endl;
-	particleFilter::cspace b_Xprior[2] = { { 2.11, 1.4, 0.81, Pi / 6, Pi / 12, Pi / 18 },
-										   { 0.03, 0.03, 0.03, Pi / 180, Pi / 180, Pi / 180 } }; // our prior belief
-	//particleFilter::cspace b_Xprior[2] = { { 0, 0, 0.81, 0, 0, 0 },
-	//									 { 0.001, 0.001, 0.001, Pi / 3600, Pi / 3600, Pi / 3600 } }; // our prior belief
+  double cube_para[3] = { 6, 4, 2 }; // cube size: 6m x 4m x 2m with center at the origin.
+  //double range[3][2] = { {-3.5, 3.5}, {-2.5, 2.5}, {-1.5, 1.5} };
+  particleFilter::cspace X_true = { 2.12, 1.388, 0.818, Pi / 6 + Pi / 400, Pi / 12 + Pi / 220, Pi / 18 - Pi / 180 }; // true state of configuration
+  //particleFilter::cspace X_true = { 0, 0, 0.818, 0, 0, 0 }; // true state of configuration
+  cout << "True state: " << X_true[0] << ' ' << X_true[1] << ' ' << X_true[2] << ' ' 
+	   << X_true[3] << ' ' << X_true[4] << ' ' << X_true[5] << endl;
+  particleFilter::cspace b_Xprior[2] = { { 2.11, 1.4, 0.81, Pi / 6, Pi / 12, Pi / 18 },
+										 { 0.03, 0.03, 0.03, Pi / 180, Pi / 180, Pi / 180 } }; // our prior belief
+  //particleFilter::cspace b_Xprior[2] = { { 0, 0, 0.81, 0, 0, 0 },
+  //									 { 0.001, 0.001, 0.001, Pi / 3600, Pi / 3600, Pi / 3600 } }; // our prior belief
 
-	particleFilter pfilter(numParticles, b_Xprior, Xstd_ob, Xstd_tran, Xstd_scatter, R);
-	distanceTransform *dist_transform = new distanceTransform(num_voxels);
-	//dist_transform->build(cube_para);
+  particleFilter pfilter(numParticles, b_Xprior, Xstd_ob, Xstd_tran, Xstd_scatter, R);
+  distanceTransform *dist_transform = new distanceTransform(num_voxels);
+  //dist_transform->build(cube_para);
 
-	int N_Measure = 60; // total number of measurements
-	double M_std = 0.000; // measurement error
-	double M[2][3]; // measurement
-	particleFilter::cspace particles_est;
-	particleFilter::cspace particles_est_stat;
-	double particle_est_diff;
+  int N_Measure = 60; // total number of measurements
+  double M_std = 0.000; // measurement error
+  double M[2][3]; // measurement
+  particleFilter::cspace particles_est;
+  particleFilter::cspace particles_est_stat;
+  double particle_est_diff;
 
-	std::random_device generator;
-	std::uniform_real_distribution<double> distribution(0, 1);
+  std::random_device generator;
+  std::uniform_real_distribution<double> distribution(0, 1);
 
-	double pstart[3];
-	normal_distribution<double> dist(0, M_std);
-	for (int i = 0; i < N_Measure; i++) {
-		// generate measurement in fixed frame, then transform it to particle frame.
-		//1.117218  0.043219  0.204427
-		if (i % 3 == 0)
-		{
-			M[1][0] = -1; M[1][1] = 0; M[1][2] = 0;
-			pstart[0] = 2;
-			pstart[1] = distribution(generator) * 0.07 + 0.15 + dist(generator);
-			pstart[2] = distribution(generator) * 0.1 + 0.05 + dist(generator);
-			if (getIntersection(mesh, pstart, M[1], M[0]) == 0)
-				cout << "err" << endl;
-			M[0][0] += R + dist(generator);	
-		}
-		else if (i % 3 == 1)
-		{
-			M[1][0] = 0; M[1][1] = -1; M[1][2] = 0;
-			pstart[0] = distribution(generator) * 0.15 + 1.38 + dist(generator);
-			pstart[1] = 1;
-			pstart[2] = distribution(generator) * 0.1 + 0.05 + dist(generator);
-			if (getIntersection(mesh, pstart, M[1], M[0]) == 0)
-				cout << "err" << endl;
-			M[0][1] += R + dist(generator);
-		}
-		else
-		{
-			M[1][0] = 0; M[1][1] = 0; M[1][2] = -1;
-			pstart[0] = distribution(generator) * 1 + 0.2 + dist(generator);
-			pstart[1] = distribution(generator) * 0.03 + 0.02 + dist(generator);
-			pstart[2] = 1;
-			if (getIntersection(mesh, pstart, M[1], M[0]) == 0)
-				cout << "err" << endl;
-			M[0][2] += R + dist(generator);
+  double pstart[3];
+  normal_distribution<double> dist(0, M_std);
+  for (int i = 0; i < N_Measure; i++) {
+	// generate measurement in fixed frame, then transform it to particle frame.
+	//1.117218  0.043219  0.204427
+	if (i % 3 == 0)
+	  {
+		M[1][0] = -1; M[1][1] = 0; M[1][2] = 0;
+		pstart[0] = 2;
+		pstart[1] = distribution(generator) * 0.07 + 0.15 + dist(generator);
+		pstart[2] = distribution(generator) * 0.1 + 0.05 + dist(generator);
+		if (getIntersection(mesh, pstart, M[1], M[0]) == 0)
+		  cout << "err" << endl;
+		M[0][0] += R + dist(generator);	
+	  }
+	else if (i % 3 == 1)
+	  {
+		M[1][0] = 0; M[1][1] = -1; M[1][2] = 0;
+		pstart[0] = distribution(generator) * 0.15 + 1.38 + dist(generator);
+		pstart[1] = 1;
+		pstart[2] = distribution(generator) * 0.1 + 0.05 + dist(generator);
+		if (getIntersection(mesh, pstart, M[1], M[0]) == 0)
+		  cout << "err" << endl;
+		M[0][1] += R + dist(generator);
+	  }
+	else
+	  {
+		M[1][0] = 0; M[1][1] = 0; M[1][2] = -1;
+		pstart[0] = distribution(generator) * 1 + 0.2 + dist(generator);
+		pstart[1] = distribution(generator) * 0.03 + 0.02 + dist(generator);
+		pstart[2] = 1;
+		if (getIntersection(mesh, pstart, M[1], M[0]) == 0)
+		  cout << "err" << endl;
+		M[0][2] += R + dist(generator);
 			
-		}
-		Transform(M, X_true, M);
-		//rotationMatrix(X_true, rotationM);
-		//multiplyM(rotationM, M[0], tempM);
-		//double transition[3] = { X_true[0], X_true[1], X_true[2] };
-		//addM(tempM, transition, M[0]);
-		///*multiplyM(rotationM, M[1], tempM);
-		//M[1][0] = tempM[0];
-		//M[1][1] = tempM[1];
-		//M[1][2] = tempM[2];*/
+	  }
+	Transform(M, X_true, M);
+	//rotationMatrix(X_true, rotationM);
+	//multiplyM(rotationM, M[0], tempM);
+	//double transition[3] = { X_true[0], X_true[1], X_true[2] };
+	//addM(tempM, transition, M[0]);
+	///*multiplyM(rotationM, M[1], tempM);
+	//M[1][0] = tempM[0];
+	//M[1][1] = tempM[1];
+	//M[1][2] = tempM[2];*/
 
-		cout << "Observation " << i << " : touch at " << M[0][0] << " " << M[0][1] << " " << M[0][2] << endl;
-		cout << "Theoretic distance: " << testResult(mesh, X_true, M, R) << endl;
-		auto tstart = chrono::high_resolution_clock::now();
-		pfilter.addObservation(M, mesh, dist_transform, i); // update particles
-		//pfilter.addObservation(M, cube_para, i);
-		pfilter.estimatedDistribution(particles_est, particles_est_stat);
-		auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - tstart);
-		particle_est_diff = 0;
-		for (int k = 0; k < particleFilter::cdim; k++) {
-			particle_est_diff += SQ(particles_est[k] - X_true[k]);
-		}
-		particle_est_diff /= particleFilter::cdim;
-		particle_est_diff = sqrt(particle_est_diff);
-		cout << "est: ";
-		for (int k = 0; k < particleFilter::cdim; k++) {
-			cout << particles_est[k] << ' ';
-		}
-		cout << endl;
-		cout << "Real distance: " << testResult(mesh, particles_est, M, R) << endl;
-		cout << "Diff: " << particle_est_diff << endl;
-		cout << "Var: ";
-		for (int k = 0; k < particleFilter::cdim; k++) {
-			cout << particles_est_stat[k] << ' ';
-		}
-		cout << endl;
-		cout << "Time: " << diff.count() << " milliseconds." << endl << endl;
+	cout << "Observation " << i << " : touch at " << M[0][0] << " " << M[0][1] << " " << M[0][2] << endl;
+	cout << "Theoretic distance: " << testResult(mesh, X_true, M, R) << endl;
+	auto tstart = chrono::high_resolution_clock::now();
+	pfilter.addObservation(M, mesh, dist_transform, i); // update particles
+	//pfilter.addObservation(M, cube_para, i);
+	pfilter.estimateGaussian(particles_est, particles_est_stat);
+	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - tstart);
+	particle_est_diff = 0;
+	for (int k = 0; k < particleFilter::cdim; k++) {
+	  particle_est_diff += SQ(particles_est[k] - X_true[k]);
 	}
-	delete (dist_transform);
+	particle_est_diff /= particleFilter::cdim;
+	particle_est_diff = sqrt(particle_est_diff);
+	cout << "est: ";
+	for (int k = 0; k < particleFilter::cdim; k++) {
+	  cout << particles_est[k] << ' ';
+	}
+	cout << endl;
+	cout << "Real distance: " << testResult(mesh, particles_est, M, R) << endl;
+	cout << "Diff: " << particle_est_diff << endl;
+	cout << "Var: ";
+	for (int k = 0; k < particleFilter::cdim; k++) {
+	  cout << particles_est_stat[k] << ' ';
+	}
+	cout << endl;
+	cout << "Time: " << diff.count() << " milliseconds." << endl << endl;
+  }
+  delete (dist_transform);
 }
 
 /*
 * Transform the touch point from particle frame
 */
+void Transform(Eigen::Vector3d src, particleFilter::cspace config, Eigen::Vector3d &dest)
+{
+    Eigen::Matrix3d rotationC;
+    rotationC << cos(config[5]), -sin(config[5]), 0,
+               sin(config[5]), cos(config[5]), 0,
+               0, 0, 1;
+    Eigen::Matrix3d rotationB;
+    rotationB << cos(config[4]), 0 , sin(config[4]),
+               0, 1, 0,
+               -sin(config[4]), 0, cos(config[4]);
+    Eigen::Matrix3d rotationA;
+    rotationA << 1, 0, 0 ,
+               0, cos(config[3]), -sin(config[3]),
+               0, sin(config[3]), cos(config[3]);
+    Eigen::Vector3d transitionV(config[0], config[1], config[2]);
+    dest = rotationC * rotationB * rotationA * src + transitionV;
+}
 void Transform(double measure[2][3], particleFilter::cspace src, double dest[2][3])
 {
 	double rotation[3][3];
@@ -794,7 +722,24 @@ void inverseTransform(double measure[2][3], particleFilter::cspace src, double d
 	multiplyM(invRot, tempM, dest[0]);
 	multiplyM(invRot, measure[1], dest[1]);
 }
-
+void inverseTransform(Eigen::Vector3d src, particleFilter::cspace config, Eigen::Vector3d &dest)
+{
+    Eigen::Matrix3d rotationC;
+    rotationC << cos(config[5]), -sin(config[5]), 0,
+               sin(config[5]), cos(config[5]), 0,
+               0, 0, 1;
+    Eigen::Matrix3d rotationB;
+    rotationB << cos(config[4]), 0 , sin(config[4]),
+               0, 1, 0,
+               -sin(config[4]), 0, cos(config[4]);
+    Eigen::Matrix3d rotationA;
+    rotationA << 1, 0, 0 ,
+               0, cos(config[3]), -sin(config[3]),
+               0, sin(config[3]), cos(config[3]);
+    Eigen::Vector3d transitionV(config[0], config[1], config[2]);
+    Eigen::Matrix3d rotationM = rotationC * rotationB * rotationA;
+    dest = rotationM.inverse() * (src - transitionV);
+}
 
 /*
  * Check if the center of a voxel is within the object
@@ -897,7 +842,7 @@ int getIntersection(vector<vec4x3> &mesh, double pstart[3], double dir[3], doubl
  *        R: radius of the touch probe
  * Output: distance
  */
-double testResult(vector<vec4x3> &mesh, double config[6], double touch[2][3], double R)
+double testResult(vector<vec4x3> &mesh, particleFilter::cspace config, double touch[2][3], double R)
 {
 	double inv_touch[2][3];
 	inverseTransform(touch, config, inv_touch);
@@ -959,11 +904,11 @@ int checkEmptyBin(std::unordered_set<string> *set, particleFilter::cspace config
  *        dist: distance between center of touch probe and object
  * Output: 1 if obstacle exists
  */
- int checkObstacles(vector<vec4x3> &mesh, double config[6], double start[2][3], double dist)
+ int checkObstacles(vector<vec4x3> &mesh, particleFilter::cspace config, double start[2][3], double dist)
 {
 	return checkObstacles(mesh, config, start, ARM_LENGTH, dist);
 }
-int checkObstacles(vector<vec4x3> &mesh, double config[6], double start[2][3], double check_length, double dist)
+int checkObstacles(vector<vec4x3> &mesh, particleFilter::cspace config, double start[2][3], double check_length, double dist)
 {
 	double inv_start[2][3];
 	int countIntersections = 0;
@@ -1085,4 +1030,49 @@ int checkIntersections(vector<vec4x3> &mesh, double voxel_center[3], double dir[
 		}
 		return 1;
 	}
+}
+
+
+void calcDistance(vector<vec4x3> &mesh, particleFilter::cspace trueConfig, particleFilter::cspace meanConfig, double euclDist[2])
+{
+    int num_mesh = int(mesh.size());
+    euclDist[0] = 0;
+    euclDist[1] = 10000000;
+    double dist = 0;
+    Eigen::Vector3d meshPoint;
+    Eigen::Vector3d transMeanPoint;
+    Eigen::Vector3d transTruePoint;
+    cout << meanConfig[0] << "   " << meanConfig[1] << endl;
+    for (int i = 0; i < num_mesh; i++) {
+        meshPoint << mesh[i][1][0], mesh[i][1][1], mesh[i][1][2];
+        Transform(meshPoint, meanConfig, transMeanPoint);
+        Transform(meshPoint, trueConfig, transTruePoint);
+        dist = (transMeanPoint - transTruePoint).norm();
+        if (dist > euclDist[0]) {
+            euclDist[0] = dist;
+        }
+        if (dist < euclDist[1]) {
+            euclDist[1] = dist;
+        }
+        meshPoint << mesh[i][2][0], mesh[i][2][1], mesh[i][2][2];
+        Transform(meshPoint, meanConfig, transMeanPoint);
+        Transform(meshPoint, trueConfig, transTruePoint);
+        dist = (transMeanPoint - transTruePoint).norm();
+        if (dist > euclDist[0]) {
+            euclDist[0] = dist;
+        }
+        if (dist < euclDist[1]) {
+            euclDist[1] = dist;
+        }
+        meshPoint << mesh[i][3][0], mesh[i][3][1], mesh[i][3][2];
+        Transform(meshPoint, meanConfig, transMeanPoint);
+        Transform(meshPoint, trueConfig, transTruePoint);
+        dist = (transMeanPoint - transTruePoint).norm();
+        if (dist > euclDist[0]) {
+            euclDist[0] = dist;
+        }
+        if (dist < euclDist[1]) {
+            euclDist[1] = dist;
+        }
+    }
 }
