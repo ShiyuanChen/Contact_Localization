@@ -625,61 +625,16 @@ void Node::propagate() {
       resampleParticles(root->particles, root->particlesPrev, n, weight);
       root->sampleParticles();
       root->propagate();
-    // } else {
-    //   Node 
-    //   particleFilter::cspace tempConfig, tConfig;
-    //   particleFilter::cspace relativeConfig, baseConfig;
-    //   relativeConfig[0] = 0;
-    //   relativeConfig[1] = 0;
-    //   relativeConfig[2] = 0;
-    //   relativeConfig[3] = 1.22;
-    //   relativeConfig[4] = 0;
-    //   relativeConfig[5] = 0;
-
-    //   Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particles.data(), cdim, numParticles);
-    //   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
-    //   Eigen::MatrixXd cov = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
-    //   double coeff = pow(numParticles, -2.0/8.0) * 0.90360 * 100;
-    //   cov = coeff * cov;
-    //   Eigen::Matrix4d normalCov;
-    //   normalCov << cov(1, 1), cov(1, 2), cov(1, 4), cov(1, 5), 
-    //                cov(2, 1), cov(2, 2), cov(2, 4), cov(2, 5), 
-    //                cov(4, 1), cov(4, 2), cov(4, 4), cov(4, 5), 
-    //                cov(5, 1), cov(5, 2), cov(5, 4), cov(5, 5);
-    //   cout << normalCov << endl;
-    //   double A = 1.0 / (sqrt(pow(2 * Pi, 4) * normalCov.determinant()));
-    //   Eigen::Matrix4d B = -0.5 * (normalCov.inverse());
-    //   double sum = 0;
-    //   double *weight = new double[n];
-      
-    //   for (int i = 1; i < n; i ++ ) {
-    //     tempConfig = root->particles[i];
-    //     transPointConfig(tempConfig, relativeConfig, tConfig);
-    //     weight[i] = 0;
-    //     Eigen::Vector4d x;
-    //     // cout << tempConfig[1] << endl;
-    //     for (int j = 0; j < numParticles; j ++) {
-    //       x << tConfig[1] - particles[j][1], tConfig[2] - particles[j][2], tConfig[4] - particles[j][4], tConfig[5] - particles[j][5];
-    //       weight[i] += A*exp(x.transpose() * B * x);
-    //     }
-    //     sum += weight[i];
-    //     // double diff = sqrt(SQ(tConfig[1]) + SQ(tConfig[3]) + SQ(tConfig[5]));
-    //     // if (diff < 0.1) {
-    //     //   for (int j = 0; j < cdim; j++) {
-    //     //     root->particles[idx][j] = tempConfig[j];
-    //     //   }
-    //     //   idx ++;
-    //     // }
-    //   }
-    //   for (int i = 0; i < n; i ++ ) {
-    //     weight[i] /= sum;
-    //     // cout << weight[i] << endl;
-    //   }
-      
-    //   resampleParticles(root->particles, root->particlesPrev, n, weight);
-    //   root->sampleParticles();
-    //   root->propagate();
+    } else {
+      double offset = parent[1]->offset;
+      double tol = parent[1]->tol;
+      Node *edge = parent[1]->node;
+      Node *plane = parent[0]->node;
+      double coeffEdge = pow(edge->numParticles, -0.2) * 0.87055/1.2155/1.2155;
+      double coeffPlane = pow(plane->numParticles, -0.2) * 0.87055/1.2155/1.2155;
+      cov = coeff * cov;
     }
+
   }
 }
 
