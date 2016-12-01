@@ -49,18 +49,19 @@ double TRUE_STATE[6] = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
 Node::Node(int n_particles, particleFilter::cspace b_init[2]):numParticles(n_particles), type(0) {
   maxNumParticles = numParticles;
   numUpdates = false;
+  fullParticles.resize(numParticles);
+  fullParticlesPrev.resize(numParticles);
   particles.resize(numParticles);
   particlesPrev.resize(numParticles);
-
   createParticles(b_init, numParticles, 1);
-
+  fulldim = cdim;
   Parent *parentPtr = new Parent(this, 0, 0);
   std::vector<Parent *> p;
   p.push_back(parentPtr);
   child.push_back(new Node(numParticles, p, 1));
-  particleFilter::cspace prior[2] = {{0,0,0,1.22,0,0},{0,0,0,0.0001,0.0001,0.0001}};
+  particleFilter::cspace prior[2] = {{0,0,0,1.22,0,0},{0,0,0,0.0005,0.0005,0.0005}};
   child.push_back(new Node(numParticles, p, prior));
-  particleFilter::cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0001,0.0001,0.0001}};
+  particleFilter::cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0005,0.0005,0.0005}};
   child.push_back(new Node(numParticles, p, prior2));
   std::vector<Parent *> topP;
   topP.push_back(new Parent(child[0], 0, 0));
@@ -69,19 +70,25 @@ Node::Node(int n_particles, particleFilter::cspace b_init[2]):numParticles(n_par
   child[0]->child.push_back(topEdge);
   child[1]->child.push_back(topEdge);
   
-  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), fulldim, numParticles);
   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
+  full_cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+  mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  mat_centered = mat.colwise() - mat.rowwise().mean();
   cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
-  cout << cov_mat << endl;
+  // cout << full_cov_mat << endl;
 
 }
 // Construction for initial datums
 Node::Node (int n_particles, std::vector<Parent *> &p, particleFilter::cspace b_init[2]):numParticles(n_particles), type(2)  {
   maxNumParticles = numParticles;
   numUpdates = false;
+  fullParticles.resize(numParticles);
+  fullParticlesPrev.resize(numParticles);
   particles.resize(numParticles);
   particlesPrev.resize(numParticles);
   int size = p.size();
+  fulldim = cdim * (size + 1);
   for (int i = 0; i < size; i ++) {
     parent.push_back(p[i]);
   }
@@ -89,18 +96,32 @@ Node::Node (int n_particles, std::vector<Parent *> &p, particleFilter::cspace b_
 
   createParticles(b_init, numParticles, 0);
 
-  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  double* tmpParticles = new double[numParticles * fulldim];
+  for(int i = 0; i < numParticles; ++i) {
+    for (int j = 0; j < fulldim; j ++) {
+      tmpParticles[i * fulldim + j] = fullParticles[i][j];
+    }
+  }
+
+  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>(tmpParticles, fulldim, numParticles);
   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
+  full_cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+  mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  mat_centered = mat.colwise() - mat.rowwise().mean();
   cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+
+  delete [] tmpParticles;
 }
 // Construction for other datums
 Node::Node(int n_particles, std::vector<Parent *> &p, int t):numParticles(n_particles), type(t) {
   maxNumParticles = numParticles;
   numUpdates = false;
+  fullParticles.resize(numParticles);
+  fullParticlesPrev.resize(numParticles);
   particles.resize(numParticles);
   particlesPrev.resize(numParticles);
   int size = p.size();
-
+  fulldim = cdim * (size + 1);
   for (int i = 0; i < size; i ++) {
     parent.push_back(p[i]);
     // p[i]->node->child.push_back(this);
@@ -108,12 +129,21 @@ Node::Node(int n_particles, std::vector<Parent *> &p, int t):numParticles(n_part
 
   createParticles();
 
+  double* tmpParticles = new double[numParticles * fulldim];
+  for(int i = 0; i < numParticles; ++i) {
+    for (int j = 0; j < fulldim; j ++) {
+      tmpParticles[i * fulldim + j] = fullParticles[i][j];
+    }
+  }
 
-  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>(tmpParticles, fulldim, numParticles);
   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
+  full_cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+  mat = Eigen::Map<Eigen::MatrixXd>((double *)particles.data(), cdim, numParticles);
+  mat_centered = mat.colwise() - mat.rowwise().mean();
   cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
-  // cout << cov_mat << endl;
 
+  delete [] tmpParticles;
 }
 
 
@@ -135,26 +165,35 @@ void Node::createParticles(particleFilter::cspace b_Xprior[2], int n_particles, 
   std::normal_distribution<double> dist(0, 1);
   if (isRoot == 1) {
     for (int i = 0; i < n_particles; i++) {
+      fullParticlesPrev[i].resize(cdim);
       for (int j = 0; j < cdim; j++) {
         particlesPrev[i][j] = b_Xprior[0][j] + b_Xprior[1][j] * (dist(rd));
+        fullParticlesPrev[i][j] = particlesPrev[i][j];
       }
     }
+    cout << "Finish creating root!" << endl;
   } else {
     std::uniform_int_distribution<> distRoot(0, parent[0]->node->numParticles - 1);
     particleFilter::cspace relativeConfig, baseConfig;
-    
+
     for (int i = 0; i < n_particles; i++) {
+      fullParticlesPrev[i].resize((parent.size() + 1) * cdim);
       for (int j = 0; j < cdim; j++) {
         relativeConfig[j] = b_Xprior[0][j] + b_Xprior[1][j] * (dist(rd));
       }
       baseConfig = parent[0]->node->particles[int(distRoot(rd))];
+      // priorParticles[0][i] = baseConfig;
+      copyParticles(baseConfig, fullParticlesPrev[i], cdim);
       if (type == 1)
         transFrameConfig(baseConfig, relativeConfig, particlesPrev[i]);
       else
         transPointConfig(baseConfig, relativeConfig, particlesPrev[i]);
+      copyParticles(particlesPrev[i], fullParticlesPrev[i], 0);
     }
+    cout << "Finish creating edges!" << endl;
   }
   particles = particlesPrev;
+  fullParticles = fullParticlesPrev;
 }
 
 /*
@@ -180,18 +219,19 @@ void Node::createParticles()
     relativeConfig[5] = Pi;
     for (int i = 0; i < numParticles; i++) {
       int indexRoot = int(distRoot(rd));
+      fullParticlesPrev[i].resize((parent.size() + 1) * cdim);
       baseConfig = parent[0]->node->particles[indexRoot];
+      copyParticles(baseConfig, fullParticlesPrev[i], cdim);
       transFrameConfig(baseConfig, relativeConfig, particlesPrev[i]);
-
       //TEMP:
-      if (particlesPrev[i][5] < 0) particlesPrev[i][5] += 2 * Pi;
+      if (particlesPrev[i][5] < 0)  particlesPrev[i][5] += 2 * Pi;
+      copyParticles(particlesPrev[i], fullParticlesPrev[i], 0);
       // for (int j = 0; j < 6; j ++) {
       //   cout << particlesPrev[i][j] << ", ";
       // }
       // cout << endl;
-      
     }
-    //particlesPrev = parent[0]->node->particles;
+    cout << "Finish creating plane!" << endl;
   } else if (type == 2) {
     Parent *plane = parent[0];
     Parent *edge = parent[1];
@@ -202,20 +242,24 @@ void Node::createParticles()
     std::uniform_int_distribution<> distEdge(0, edge->node->numParticles - 1);
     std::uniform_int_distribution<> distPlane(0, plane->node->numParticles - 1);
     std::uniform_real_distribution<double> dist(-1, 1);
+
     for (int i = 0; i < numParticles; i ++) {
       int indexEdge = int(distEdge(rd));
+      fullParticlesPrev[i].resize((parent.size() + 1) * cdim);
       particleFilter::cspace configEdge = edge->node->particles[indexEdge];
+      copyParticles(configEdge, fullParticlesPrev[i], 2 * cdim);
       Eigen::Vector3d pa, pb; 
       pa << configEdge[0], configEdge[1], configEdge[2];
       pb << configEdge[3], configEdge[4], configEdge[5];
       int indexPlane = int(distPlane(rd));
       particleFilter::cspace configPlane = plane->node->particles[indexPlane];
+      copyParticles(configPlane, fullParticlesPrev[i], cdim);
       Eigen::Vector3d pa_prime, pb_prime;
       inverseTransform(pa, configPlane, pa_prime);
       inverseTransform(pb, configPlane, pb_prime);
       double td = dist(rd) * edgeTol;
-      pa_prime(1) = 0;
-      pb_prime(1) = 0;
+      // pa_prime(1) = 0;
+      // pb_prime(1) = 0;
       Eigen::Vector3d normVec;
       normVec << (pb_prime(2) - pa_prime(2)), 0, (pa_prime(0) - pb_prime(0));
       normVec.normalize();
@@ -232,6 +276,7 @@ void Node::createParticles()
       particlesPrev[i][3] = pb(0);
       particlesPrev[i][4] = pb(1);
       particlesPrev[i][5] = pb(2);
+      copyParticles(particlesPrev[i], fullParticlesPrev[i], 0);
     }
   } else {
     Parent *plane = parent[0];
@@ -312,6 +357,7 @@ void Node::createParticles()
     }
   }
   particles = particlesPrev;
+  fullParticles = fullParticlesPrev;
 }
 // sample a config from the particles uniformly.
 void Node::sampleConfig(particleFilter::cspace &config) {
@@ -396,11 +442,11 @@ void Node::sampleParticles() {
   std::random_device rd;
   std::normal_distribution<double> dist(0, 1);
   std::uniform_real_distribution<double> distribution(0, numParticles);
-  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)fullParticlesPrev.data(), fulldim, numParticles);
   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
-  cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+  full_cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
   double coeff = pow(numParticles, -0.2) * 0.87055/1.2155/1.2155;
-  Eigen::MatrixXd H_cov = coeff * cov_mat;
+  Eigen::MatrixXd H_cov = coeff * full_cov_mat;
 
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(H_cov);
   Eigen::MatrixXd rot = eigenSolver.eigenvectors(); 
@@ -626,19 +672,20 @@ void Node::propagate() {
       root->sampleParticles();
       root->propagate();
     } else {
-      double offset = parent[1]->offset;
-      double tol = parent[1]->tol;
-      Node *edge = parent[1]->node;
-      Node *plane = parent[0]->node;
-      double coeffEdge = pow(edge->numParticles, -0.2) * 0.87055/1.2155/1.2155;
-      double coeffPlane = pow(plane->numParticles, -0.2) * 0.87055/1.2155/1.2155;
-      cov = coeff * cov;
+      // double offset = parent[1]->offset;
+      // double tol = parent[1]->tol;
+      // Node *edge = parent[1]->node;
+      // Node *plane = parent[0]->node;
+      // double coeffEdge = pow(edge->numParticles, -0.2) * 0.87055/1.2155/1.2155;
+      // double coeffPlane = pow(plane->numParticles, -0.2) * 0.87055/1.2155/1.2155;
+      // cov = coeff * cov;
     }
 
   }
 }
 
 bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
+  cout << "Start updating!" << endl;
   std::unordered_set<string> bins;
   std::random_device rd;
   std::normal_distribution<double> dist(0, 1);
@@ -648,8 +695,10 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
   int count2 = 0;
   int count3 = 0;
   bool iffar = false;
-  Particles b_X = particlesPrev;
+  FullParticles b_X = fullParticlesPrev;
   int idx = 0;
+  fullCspace tempFullState;
+  tempFullState.resize(fulldim);
   particleFilter::cspace tempState;
   double D;
   double cur_inv_M[2][3];
@@ -661,33 +710,38 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
   Eigen::Vector3d touch_dir;
   int num_bins = 0;
   int count_bar = 0;
-  double coeff = pow(numParticles, -0.2) * 0.87055/1.2155/1.2155;
-  Eigen::MatrixXd H_cov = coeff * cov_mat;
-  cout << "H_cov: " << H_cov << endl;
+  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155;
+  // cout << "Coeff: " << coeff << endl;
+  Eigen::MatrixXd H_cov = coeff * full_cov_mat;
+  // cout << "full_cov_mat: " << full_cov_mat << endl;
+  // cout << "cov_mat: " << cov_mat << endl;
+  // cout << "H_cov: " << H_cov << endl;
 
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(H_cov);
   Eigen::MatrixXd rot = eigenSolver.eigenvectors(); 
   Eigen::VectorXd scl = eigenSolver.eigenvalues();
-
-  for (int j = 0; j < cdim; j++) {
-    scl(j, 0) = sqrt(scl(j, 0));
+  for (int j = 0; j < fulldim; j++) {
+    scl(j, 0) = sqrt(max2(scl(j, 0),0));
   }
-  Eigen::VectorXd samples(cdim, 1);
-  Eigen::VectorXd rot_sample(cdim, 1);
-  
+  Eigen::VectorXd samples(fulldim, 1);
+  Eigen::VectorXd rot_sample(fulldim, 1);
   if (type == 1) { // Plane
+    cout << "Start updating Plane!" << endl;
     while (i < numParticles && i < maxNumParticles) {
       idx = int(floor(distribution(rd)));
 
-      for (int j = 0; j < cdim; j++) {
+      for (int j = 0; j < fulldim; j++) {
         samples(j, 0) = scl(j, 0) * dist(rd);
       }
       rot_sample = rot*samples;
+      for (int j = 0; j < fulldim; j++) {
+        /* TODO: use quaternions instead of euler angles */
+        tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
+      }
       for (int j = 0; j < cdim; j++) {
         /* TODO: use quaternions instead of euler angles */
-        tempState[j] = b_X[idx][j] + rot_sample(j, 0);
+        tempState[j] = tempFullState[j];
       }
-
       inverseTransform(cur_M, tempState, cur_inv_M);
       touch_dir << cur_inv_M[1][0], cur_inv_M[1][1], cur_inv_M[1][2];
       D = abs(cur_inv_M[0][1] - R);
@@ -704,7 +758,9 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
         for (int j = 0; j < cdim; j++) {
           particles[i][j] = tempState[j];
         }
-
+        for (int j = 0; j < fulldim; j++) {
+          fullParticles[i][j] = tempFullState[j];
+        }
         if (checkEmptyBin(&bins, particles[i]) == 1) {
           num_bins++;
           // if (i >= N_MIN) {
@@ -719,18 +775,39 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
         i += 1;
       }
     }
-
+    cout << "End updating Plane!" << endl;
   } else if (type == 2) { // Edge
+    // for (int i = 0; i < numParticles; i ++) {
+    //   // for (int j = 0; j < cdim; j ++) {
+    //   //   cout << particles[i][j] << " ,";
+    //   // }
+    //   cout << particles[i][0] << " ,";
+      
+    // }
+    // cout << endl;
+    // for (int i = 0; i < numParticles; i ++) {
+    //   // for (int j = 0; j < 18; j ++) {
+    //   //   cout << fullParticles[i][j] << " ,";
+    //   // }
+    //   cout << fullParticles[i][0] << " ,";
+    // }
+    //       cout << endl;
+
     while (i < numParticles && i < maxNumParticles) {
       idx = int(floor(distribution(rd)));
 
-      for (int j = 0; j < cdim; j++) {
+      for (int j = 0; j < fulldim; j++) {
         samples(j, 0) = scl(j, 0) * dist(rd);
       }
       rot_sample = rot*samples;
+      for (int j = 0; j < fulldim; j++) {
+        /* TODO: use quaternions instead of euler angles */
+        tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
+      }
+
       for (int j = 0; j < cdim; j++) {
         /* TODO: use quaternions instead of euler angles */
-        tempState[j] = b_X[idx][j] + rot_sample(j, 0);
+        tempState[j] = tempFullState[j];
       }
       Eigen::Vector3d x1, x2, x0, tmp1, tmp2;
       x1 << tempState[0], tempState[1], tempState[2];
@@ -740,6 +817,7 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
       tmp2 = x2 - x1;
       D = (tmp1.squaredNorm() * tmp2.squaredNorm() - pow(tmp1.dot(tmp2),2)) / tmp2.squaredNorm();
       D = abs(sqrt(D)- R);
+      // cout << "Cur distance: " << D << endl;
       // cout << "D: " << D << endl;
       
       // if (xind >= (dist_transform->num_voxels[0] - 1) || yind >= (dist_transform->num_voxels[1] - 1) || zind >= (dist_transform->num_voxels[2] - 1))
@@ -753,7 +831,9 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
         for (int j = 0; j < cdim; j++) {
           particles[i][j] = tempState[j];
         }
-
+        for (int j = 0; j < fulldim; j++) {
+          fullParticles[i][j] = tempFullState[j];
+        }
         if (checkEmptyBin(&bins, particles[i]) == 1) {
           num_bins++;
           // if (i >= N_MIN) {
@@ -768,10 +848,12 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
         i += 1;
       }
     }
+    cout << "End updating Edge!" << endl;
     Node *p = parent[0]->node;
     if (p->type == 1) {
       p->update(cur_M, Xstd_ob, R);
     }
+    
   }
   cout << "Number of total iterations: " << count << endl;
   cout << "Number of iterations after unsigned_dist_check: " << count2 << endl;
@@ -780,10 +862,178 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
   cout << "Number of particles: " << numParticles << endl;
   
   particlesPrev = particles;
-  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+  fullParticlesPrev = fullParticles;
+
+  double* tmpParticles = new double[numParticles * fulldim];
+  for(int i = 0; i < numParticles; ++i) {
+    for (int j = 0; j < fulldim; j ++) {
+      tmpParticles[i * fulldim + j] = fullParticlesPrev[i][j];
+    }
+  }
+
+  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>(tmpParticles, fulldim, numParticles);
   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
+  full_cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+  mat = Eigen::Map<Eigen::MatrixXd>((double *)particles.data(), cdim, numParticles);
+  mat_centered = mat.colwise() - mat.rowwise().mean();
   cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+
+  delete[] tmpParticles;
+
   cout << "Start to propogate update to root" << endl;
-  propagate();
+  // propagate();
+
+  cout << "End updating!" << endl;
   return iffar;
 }
+// bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
+//   std::unordered_set<string> bins;
+//   std::random_device rd;
+//   std::normal_distribution<double> dist(0, 1);
+//   std::uniform_real_distribution<double> distribution(0, numParticles);
+//   int i = 0;
+//   int count = 0;
+//   int count2 = 0;
+//   int count3 = 0;
+//   bool iffar = false;
+//   Particles b_X = particlesPrev;
+//   int idx = 0;
+//   particleFilter::cspace tempState;
+//   double D;
+//   double cur_inv_M[2][3];
+  
+//   double unsigned_dist_check = R + 2 * Xstd_ob;
+//   double signed_dist_check = 2 * Xstd_ob;
+
+//   //Eigen::Vector3d gradient;
+//   Eigen::Vector3d touch_dir;
+//   int num_bins = 0;
+//   int count_bar = 0;
+//   double coeff = pow(numParticles, -0.2) * 0.87055/1.2155/1.2155;
+//   Eigen::MatrixXd H_cov = coeff * cov_mat;
+//   cout << "H_cov: " << H_cov << endl;
+
+//   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(H_cov);
+//   Eigen::MatrixXd rot = eigenSolver.eigenvectors(); 
+//   Eigen::VectorXd scl = eigenSolver.eigenvalues();
+
+//   for (int j = 0; j < cdim; j++) {
+//     scl(j, 0) = sqrt(scl(j, 0));
+//   }
+//   Eigen::VectorXd samples(cdim, 1);
+//   Eigen::VectorXd rot_sample(cdim, 1);
+  
+//   if (type == 1) { // Plane
+//     while (i < numParticles && i < maxNumParticles) {
+//       idx = int(floor(distribution(rd)));
+
+//       for (int j = 0; j < cdim; j++) {
+//         samples(j, 0) = scl(j, 0) * dist(rd);
+//       }
+//       rot_sample = rot*samples;
+//       for (int j = 0; j < cdim; j++) {
+//         /* TODO: use quaternions instead of euler angles */
+//         tempState[j] = b_X[idx][j] + rot_sample(j, 0);
+//       }
+
+//       inverseTransform(cur_M, tempState, cur_inv_M);
+//       touch_dir << cur_inv_M[1][0], cur_inv_M[1][1], cur_inv_M[1][2];
+//       D = abs(cur_inv_M[0][1] - R);
+//       // cout << "D: " << D << endl;
+      
+//       // if (xind >= (dist_transform->num_voxels[0] - 1) || yind >= (dist_transform->num_voxels[1] - 1) || zind >= (dist_transform->num_voxels[2] - 1))
+//       //  continue;
+          
+//       count += 1;
+//       // if (sqrt(count) == floor(sqrt(count))) cout << "DDDD " << D << endl;
+//       if (D <= signed_dist_check) {
+//         // if (sqrt(count) == floor(sqrt(count))) cout << "D " << D << endl;
+//         count2 ++;
+//         for (int j = 0; j < cdim; j++) {
+//           particles[i][j] = tempState[j];
+//         }
+
+//         if (checkEmptyBin(&bins, particles[i]) == 1) {
+//           num_bins++;
+//           // if (i >= N_MIN) {
+//           //int numBins = bins.size();
+//           numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
+//           // }
+//         }
+//         //double d = testResult(mesh, particles[i], cur_M, R);
+//         //if (d > 0.01)
+//         //  cout << cur_inv_M[0][0] << "  " << cur_inv_M[0][1] << "  " << cur_inv_M[0][2] << "   " << d << "   " << D << //"   " << gradient << "   " << gradient.dot(touch_dir) << 
+//         //       "   " << dist_adjacent[0] << "   " << dist_adjacent[1] << "   " << dist_adjacent[2] << "   " << particles[i][2] << endl;
+//         i += 1;
+//       }
+//     }
+
+//   } else if (type == 2) { // Edge
+//     while (i < numParticles && i < maxNumParticles) {
+//       idx = int(floor(distribution(rd)));
+
+//       for (int j = 0; j < cdim; j++) {
+//         samples(j, 0) = scl(j, 0) * dist(rd);
+//       }
+//       rot_sample = rot*samples;
+//       for (int j = 0; j < cdim; j++) {
+//         /* TODO: use quaternions instead of euler angles */
+//         tempState[j] = b_X[idx][j] + rot_sample(j, 0);
+//       }
+//       Eigen::Vector3d x1, x2, x0, tmp1, tmp2;
+//       x1 << tempState[0], tempState[1], tempState[2];
+//       x2 << tempState[3], tempState[4], tempState[5];
+//       x0 << cur_M[0][0], cur_M[0][1], cur_M[0][2];
+//       tmp1 = x1 - x0;
+//       tmp2 = x2 - x1;
+//       D = (tmp1.squaredNorm() * tmp2.squaredNorm() - pow(tmp1.dot(tmp2),2)) / tmp2.squaredNorm();
+//       D = abs(sqrt(D)- R);
+//       // cout << "D: " << D << endl;
+      
+//       // if (xind >= (dist_transform->num_voxels[0] - 1) || yind >= (dist_transform->num_voxels[1] - 1) || zind >= (dist_transform->num_voxels[2] - 1))
+//       //  continue;
+          
+//       count += 1;
+//       // if (sqrt(count) == floor(sqrt(count))) cout << "DDDD " << D << endl;
+//       if (D <= signed_dist_check) {
+//         // if (sqrt(count) == floor(sqrt(count))) cout << "D " << D << endl;
+//         count2 ++;
+//         for (int j = 0; j < cdim; j++) {
+//           particles[i][j] = tempState[j];
+//         }
+
+//         if (checkEmptyBin(&bins, particles[i]) == 1) {
+//           num_bins++;
+//           // if (i >= N_MIN) {
+//           //int numBins = bins.size();
+//           numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
+//           // }
+//         }
+//         //double d = testResult(mesh, particles[i], cur_M, R);
+//         //if (d > 0.01)
+//         //  cout << cur_inv_M[0][0] << "  " << cur_inv_M[0][1] << "  " << cur_inv_M[0][2] << "   " << d << "   " << D << //"   " << gradient << "   " << gradient.dot(touch_dir) << 
+//         //       "   " << dist_adjacent[0] << "   " << dist_adjacent[1] << "   " << dist_adjacent[2] << "   " << particles[i][2] << endl;
+//         i += 1;
+//       }
+//     }
+//     Node *p = parent[0]->node;
+//     if (p->type == 1) {
+//       p->update(cur_M, Xstd_ob, R);
+//     }
+//   }
+//   cout << "Number of total iterations: " << count << endl;
+//   cout << "Number of iterations after unsigned_dist_check: " << count2 << endl;
+//   cout << "Number of iterations before safepoint check: " << count3 << endl;
+//   cout << "Number of occupied bins: " << num_bins << endl;
+//   cout << "Number of particles: " << numParticles << endl;
+  
+//   particlesPrev = particles;
+//   Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)particlesPrev.data(), cdim, numParticles);
+//   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
+//   cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+//   cout << "Start to propogate update to root" << endl;
+//   // propagate();
+
+
+//   return iffar;
+// }

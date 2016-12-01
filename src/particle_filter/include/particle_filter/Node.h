@@ -20,9 +20,13 @@ class Node
  public:
   static const int cdim = 6;
   //typedef std::array<double,cdim> cspace; // configuration space of the particles
-  typedef std::vector<particleFilter::cspace> Particles;
+  typedef std::array<double,cdim> cspace; // configuration space of the particles
+  typedef std::vector<double> fullCspace;
+  typedef std::vector<cspace> Particles;
+  typedef std::vector<fullCspace> FullParticles;
   int numParticles; // number of particles
   int maxNumParticles;
+  int fulldim;
 
   Node (int n_particles, particleFilter::cspace b_init[2]);
   Node (int n_particles, std::vector<Parent *> &p, int type);
@@ -44,11 +48,13 @@ class Node
   //cspace b_Xpre[2];   // Previous (estimated) distribution (mean and variance)
   std::vector<Node*> child;
   std::vector<Parent*> parent;
-  Particles particles;  // Current set of particles
-  Particles particlesPrev; // Previous set of particles
-  // Particles particles_1; // Previous previous set of particles
-  
+  Particles particles;
+  Particles particlesPrev;
+  FullParticles fullParticles;
+  FullParticles fullParticlesPrev;
+
   Eigen::MatrixXd cov_mat;
+  Eigen::MatrixXd full_cov_mat;
 
   // Local functions
   void createParticles(particleFilter::cspace b_Xprior[2], int n_particles, int isRoot);

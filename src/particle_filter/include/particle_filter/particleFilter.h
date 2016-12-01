@@ -15,7 +15,9 @@ class particleFilter
  public:
   static const int cdim = 6;
   typedef std::array<double,cdim> cspace; // configuration space of the particles
+  typedef std::vector<double> fullCspace;
   typedef std::vector<cspace> Particles;
+  typedef std::vector<fullCspace> FullParticles;
   int numParticles; // number of particles
   int maxNumParticles;
 
@@ -71,6 +73,6 @@ void calcDistance(vector<vec4x3> &mesh, particleFilter::cspace trueConfig, parti
 void transPointConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig);
 void transFrameConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig);
 void invTransFrameConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig);
-
+void copyParticles(particleFilter::cspace config, particleFilter::fullCspace &fullConfig, int idx);
 #endif // PARTICLE_FILTER_H
 
