@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <array>
 #include <chrono>
+#include "definitions.h"
 #include "tribox.h"
 #include "raytri.h"
 #include "circleEllipse.h"
@@ -46,7 +47,7 @@ int total_time = 0;
 int converge_count = 0;
 double TRUE_STATE[6] = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
 // Construction for root
-Node::Node(int n_particles, particleFilter::cspace b_init[2]):numParticles(n_particles), type(0) {
+Node::Node(int n_particles, cspace b_init[2]):numParticles(n_particles), type(0) {
   maxNumParticles = numParticles;
   numUpdates = false;
   fullParticles.resize(numParticles);
@@ -59,9 +60,9 @@ Node::Node(int n_particles, particleFilter::cspace b_init[2]):numParticles(n_par
   std::vector<Parent *> p;
   p.push_back(parentPtr);
   child.push_back(new Node(numParticles, p, 1));
-  particleFilter::cspace prior[2] = {{0,0,0,1.22,0,0},{0,0,0,0.0005,0.0005,0.0005}};
+  cspace prior[2] = {{0,0,0,1.22,0,0},{0,0,0,0.0005,0.0005,0.0005}};
   child.push_back(new Node(numParticles, p, prior));
-  particleFilter::cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0005,0.0005,0.0005}};
+  cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0005,0.0005,0.0005}};
   child.push_back(new Node(numParticles, p, prior2));
   std::vector<Parent *> topP;
   topP.push_back(new Parent(child[0], 0, 0));
@@ -80,7 +81,7 @@ Node::Node(int n_particles, particleFilter::cspace b_init[2]):numParticles(n_par
 
 }
 // Construction for initial datums
-Node::Node (int n_particles, std::vector<Parent *> &p, particleFilter::cspace b_init[2]):numParticles(n_particles), type(2)  {
+Node::Node (int n_particles, std::vector<Parent *> &p, cspace b_init[2]):numParticles(n_particles), type(2)  {
   maxNumParticles = numParticles;
   numUpdates = false;
   fullParticles.resize(numParticles);
@@ -159,7 +160,7 @@ void Node::addDatum(double d, double td) {
  *        n_partcles: number of particles
  * output: none
  */
-void Node::createParticles(particleFilter::cspace b_Xprior[2], int n_particles, int isRoot)
+void Node::createParticles(cspace b_Xprior[2], int n_particles, int isRoot)
 {
   std::random_device rd;
   std::normal_distribution<double> dist(0, 1);
@@ -174,7 +175,7 @@ void Node::createParticles(particleFilter::cspace b_Xprior[2], int n_particles, 
     cout << "Finish creating root!" << endl;
   } else {
     std::uniform_int_distribution<> distRoot(0, parent[0]->node->numParticles - 1);
-    particleFilter::cspace relativeConfig, baseConfig;
+    cspace relativeConfig, baseConfig;
 
     for (int i = 0; i < n_particles; i++) {
       fullParticlesPrev[i].resize((parent.size() + 1) * cdim);
@@ -210,7 +211,7 @@ void Node::createParticles()
   if (type == 1) {
     std::random_device rd;
     std::uniform_int_distribution<> distRoot(0, parent[0]->node->numParticles - 1);
-    particleFilter::cspace relativeConfig, baseConfig;
+    cspace relativeConfig, baseConfig;
     relativeConfig[0] = 1.22;
     relativeConfig[1] = -0.025;
     relativeConfig[2] = 0;
@@ -246,13 +247,13 @@ void Node::createParticles()
     for (int i = 0; i < numParticles; i ++) {
       int indexEdge = int(distEdge(rd));
       fullParticlesPrev[i].resize((parent.size() + 1) * cdim);
-      particleFilter::cspace configEdge = edge->node->particles[indexEdge];
+      cspace configEdge = edge->node->particles[indexEdge];
       copyParticles(configEdge, fullParticlesPrev[i], 2 * cdim);
       Eigen::Vector3d pa, pb; 
       pa << configEdge[0], configEdge[1], configEdge[2];
       pb << configEdge[3], configEdge[4], configEdge[5];
       int indexPlane = int(distPlane(rd));
-      particleFilter::cspace configPlane = plane->node->particles[indexPlane];
+      cspace configPlane = plane->node->particles[indexPlane];
       copyParticles(configPlane, fullParticlesPrev[i], cdim);
       Eigen::Vector3d pa_prime, pb_prime;
       inverseTransform(pa, configPlane, pa_prime);
@@ -296,15 +297,15 @@ void Node::createParticles()
     for (int i = 0; i < numParticles; i ++) {
       int indexEdge1 = int(distEdge1(rd));
       int indexEdge2 = int(distEdge2(rd));
-      particleFilter::cspace configEdge1 = edge1->node->particles[indexEdge1];
-      particleFilter::cspace configEdge2 = edge2->node->particles[indexEdge2];
+      cspace configEdge1 = edge1->node->particles[indexEdge1];
+      cspace configEdge2 = edge2->node->particles[indexEdge2];
       Eigen::Vector3d pa1, pb1, pa2, pb2;
       pa1 << configEdge1[0], configEdge1[1], configEdge1[2];
       pb1 << configEdge1[3], configEdge1[4], configEdge1[5];
       pa2 << configEdge2[0], configEdge2[1], configEdge2[2];
       pb2 << configEdge2[3], configEdge2[4], configEdge2[5];
       int indexPlane = int(distPlane(rd));
-      particleFilter::cspace configPlane = plane->node->particles[indexPlane];
+      cspace configPlane = plane->node->particles[indexPlane];
       Eigen::Vector3d pa1_prime, pb1_prime, pa2_prime, pb2_prime;
       inverseTransform(pa1, configPlane, pa1_prime);
       inverseTransform(pb1, configPlane, pb1_prime);
@@ -360,13 +361,13 @@ void Node::createParticles()
   fullParticles = fullParticlesPrev;
 }
 // sample a config from the particles uniformly.
-void Node::sampleConfig(particleFilter::cspace &config) {
+void Node::sampleConfig(cspace &config) {
   std::random_device rd;
   std::uniform_int_distribution<> dist(0, numParticles - 1);
   config = particlesPrev[int(dist(rd))];
 }
 
-void Node::estimateGaussian(particleFilter::cspace &x_mean, particleFilter::cspace &x_est_stat) {
+void Node::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
   cout << "Estimated Mean: ";
   for (int k = 0; k < cdim; k++) {
   x_mean[k] = 0;
@@ -395,6 +396,15 @@ void Node::getAllParticles(Particles &particles_dest)
   particles_dest = particlesPrev;
 }
 
+void Node::getPriorParticles(Particles &particles_dest, int idx)
+{
+  particles_dest.resize(numParticles);
+  for (int i = 0; i < numParticles; i ++) {
+    for (int j = 0; j < cdim; j ++) {
+      particles_dest[i][j] = fullParticlesPrev[i][idx + j];
+    }
+  }
+}
 
 void Node::resampleParticles(Particles &rootParticles, Particles &rootParticlesPrev, int n, double *W)
 {
@@ -481,9 +491,9 @@ void Node::propagate() {
       if (ch->numUpdates == numUpdates) continue;
       if (i == 0) {
         int chNumParticles = ch->numParticles;
-        particleFilter::cspace tempConfig, tConfig;
-        particleFilter::cspace relativeConfig, baseConfig;
-        particleFilter::cspace curMean, curVar;
+        cspace tempConfig, tConfig;
+        cspace relativeConfig, baseConfig;
+        cspace curMean, curVar;
         Particles transParticles;
         transParticles.resize(numParticles);
         relativeConfig[0] = 1.22;
@@ -535,9 +545,9 @@ void Node::propagate() {
     // Particles *rootParticlesPrev = root->particlesPrev;
     // Particles *rootParticles = root->particles;
     int n = root->numParticles;
-    particleFilter::cspace tempConfig, tConfig;
-    particleFilter::cspace relativeConfig, baseConfig;
-    particleFilter::cspace curMean, curVar;
+    cspace tempConfig, tConfig;
+    cspace relativeConfig, baseConfig;
+    cspace curMean, curVar;
     Particles invParticles;
     invParticles.resize(numParticles);
     relativeConfig[0] = 1.22;
@@ -619,8 +629,8 @@ void Node::propagate() {
     if (root->type == 0) {
       
       int n = root->numParticles;
-      particleFilter::cspace tempConfig, tConfig;
-      particleFilter::cspace relativeConfig, baseConfig;
+      cspace tempConfig, tConfig;
+      cspace relativeConfig, baseConfig;
       relativeConfig[0] = 0;
       relativeConfig[1] = 0;
       relativeConfig[2] = 0;
@@ -699,7 +709,7 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
   int idx = 0;
   fullCspace tempFullState;
   tempFullState.resize(fulldim);
-  particleFilter::cspace tempState;
+  cspace tempState;
   double D;
   double cur_inv_M[2][3];
   
@@ -886,6 +896,8 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
   cout << "End updating!" << endl;
   return iffar;
 }
+
+
 // bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
 //   std::unordered_set<string> bins;
 //   std::random_device rd;
@@ -898,7 +910,7 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
 //   bool iffar = false;
 //   Particles b_X = particlesPrev;
 //   int idx = 0;
-//   particleFilter::cspace tempState;
+//   cspace tempState;
 //   double D;
 //   double cur_inv_M[2][3];
   

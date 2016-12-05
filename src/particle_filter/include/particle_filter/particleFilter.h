@@ -5,19 +5,15 @@
 #include <cstring>
 #include <unordered_set>
 #include <Eigen/Dense>
+#include "definitions.h"
 #include "distanceTransformNew.h"
 using namespace std;
-typedef array<array<float, 3>, 4> vec4x3;
 
 class Node;
 class particleFilter
 {
  public:
   static const int cdim = 6;
-  typedef std::array<double,cdim> cspace; // configuration space of the particles
-  typedef std::vector<double> fullCspace;
-  typedef std::vector<cspace> Particles;
-  typedef std::vector<fullCspace> FullParticles;
   int numParticles; // number of particles
   int maxNumParticles;
 
@@ -53,26 +49,26 @@ class particleFilter
   Node* addDatum(std::vector<Node*> node, std::vector<double[3]> offset, std::vector<double[3]> tol);
   Node* addInitialDatum();
 };
-// void Transform(double measure[3], particleFilter::cspace src, double dest[3]);
-void Transform(double measure[2][3], particleFilter::cspace src, double dest[2][3]);
-void inverseTransform(double measure[3], particleFilter::cspace src, double dest[3]);
-void inverseTransform(double measure[2][3], particleFilter::cspace src, double dest[2][3]);
+// void Transform(double measure[3], cspace src, double dest[3]);
+void Transform(double measure[2][3], cspace src, double dest[2][3]);
+void inverseTransform(double measure[3], cspace src, double dest[3]);
+void inverseTransform(double measure[2][3], cspace src, double dest[2][3]);
 
-void Transform(Eigen::Vector3d &src, particleFilter::cspace config, Eigen::Vector3d &dest);
-void inverseTransform(Eigen::Vector3d &src, particleFilter::cspace config, Eigen::Vector3d &dest);
+void Transform(Eigen::Vector3d &src, cspace config, Eigen::Vector3d &dest);
+void inverseTransform(Eigen::Vector3d &src, cspace config, Eigen::Vector3d &dest);
 
 // void getDisplacement(particleFilter::)
 int checkInObject(vector<vec4x3> &mesh, double voxel_center[3]);
 int getIntersection(vector<vec4x3> &mesh, double pstart[3], double dir[3], double intersection[3]);
-double testResult(vector<vec4x3> &mesh, particleFilter::cspace config, double touch[2][3], double R);
-int checkObstacles(vector<vec4x3> &mesh, particleFilter::cspace config, double touch[2][3], double dist);
-int checkObstacles(vector<vec4x3> &mesh, particleFilter::cspace config, double start[2][3], double check_length, double dist);
+double testResult(vector<vec4x3> &mesh, cspace config, double touch[2][3], double R);
+int checkObstacles(vector<vec4x3> &mesh, cspace config, double touch[2][3], double dist);
+int checkObstacles(vector<vec4x3> &mesh, cspace config, double start[2][3], double check_length, double dist);
 int checkIntersections(vector<vec4x3> &mesh, double voxel_center[3], double dir[3], double check_length, double &dist);
-int checkEmptyBin(std::unordered_set<string> *set, particleFilter::cspace config);
-void calcDistance(vector<vec4x3> &mesh, particleFilter::cspace trueConfig, particleFilter::cspace meanConfig, double euclDist[2]);
-void transPointConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig);
-void transFrameConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig);
-void invTransFrameConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig);
-void copyParticles(particleFilter::cspace config, particleFilter::fullCspace &fullConfig, int idx);
+int checkEmptyBin(std::unordered_set<string> *set, cspace config);
+void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, double euclDist[2]);
+void transPointConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
+void transFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
+void invTransFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
+void copyParticles(cspace config, fullCspace &fullConfig, int idx);
 #endif // PARTICLE_FILTER_H
 

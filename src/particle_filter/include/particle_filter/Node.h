@@ -5,11 +5,11 @@
 #include <cstring>
 #include <unordered_set>
 #include <Eigen/Dense>
+#include "definitions.h"
 #include "distanceTransformNew.h"
 #include "particleFilter.h"
 
 using namespace std;
-typedef array<array<float, 3>, 4> vec4x3;
 class Parent;
 
 // class particleFilter;
@@ -19,22 +19,17 @@ class Node
   friend class Parent;
  public:
   static const int cdim = 6;
-  //typedef std::array<double,cdim> cspace; // configuration space of the particles
-  typedef std::array<double,cdim> cspace; // configuration space of the particles
-  typedef std::vector<double> fullCspace;
-  typedef std::vector<cspace> Particles;
-  typedef std::vector<fullCspace> FullParticles;
   int numParticles; // number of particles
   int maxNumParticles;
   int fulldim;
 
-  Node (int n_particles, particleFilter::cspace b_init[2]);
+  Node (int n_particles, cspace b_init[2]);
   Node (int n_particles, std::vector<Parent *> &p, int type);
-  Node (int n_particles, std::vector<Parent *> &p, particleFilter::cspace b_init[2]);
+  Node (int n_particles, std::vector<Parent *> &p, cspace b_init[2]);
   // void addObservation (double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss = false);
-  void estimateGaussian(particleFilter::cspace &x_mean, particleFilter::cspace &x_est_stat);
+  void estimateGaussian(cspace &x_mean, cspace &x_est_stat);
   void getAllParticles(Particles &particles_dest);
-
+  void getPriorParticles(Particles &particles_dest, int idx);
  protected:
   // Parameters of Node
   int type; // 0: root; 1: plane; 2. edge; 3. hole
@@ -44,7 +39,7 @@ class Node
   // double R; // probe radius
 
   // internal variables
-  particleFilter::cspace b_Xprior[2]; // Initial distribution (mean and variance)
+  cspace b_Xprior[2]; // Initial distribution (mean and variance)
   //cspace b_Xpre[2];   // Previous (estimated) distribution (mean and variance)
   std::vector<Node*> child;
   std::vector<Parent*> parent;
@@ -57,12 +52,12 @@ class Node
   Eigen::MatrixXd full_cov_mat;
 
   // Local functions
-  void createParticles(particleFilter::cspace b_Xprior[2], int n_particles, int isRoot);
+  void createParticles(cspace b_Xprior[2], int n_particles, int isRoot);
   void createParticles();
   void addDatum(double dist, double tol);
   // bool updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, double Xstd_ob, double R, bool miss);
   bool update(double cur_M[2][3], double Xstd_ob, double R);
-  void sampleConfig(particleFilter::cspace &config); // sample a config from the particles uniformly.
+  void sampleConfig(cspace &config); // sample a config from the particles uniformly.
   void propagate();
   void resampleParticles(Particles &rootParticles, Particles &rootParticlesPrev, int n, double *W);
   void sampleParticles();

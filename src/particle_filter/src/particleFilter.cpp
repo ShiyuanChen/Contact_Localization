@@ -8,6 +8,7 @@
 #include <array>
 #include <chrono>
 #include <cmath> 
+#include "definitions.h"
 #include "tribox.h"
 #include "raytri.h"
 #include "circleEllipse.h"
@@ -114,6 +115,7 @@ Node* particleFilter::addInitialDatum()
 void particleFilter::getAllParticles(Particles &particles_dest)
 {
   root->child[0]->getAllParticles(particles_dest);
+  // root->child[1]->child[0]->getPriorParticles(particles_dest, cdim);
 }
 
 // /*
@@ -146,8 +148,8 @@ void particleFilter::getAllParticles(Particles &particles_dest)
  */
 void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss)
 {
-	// particleFilter::cspace trueConfig = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
-	particleFilter::cspace trueConfig = {1.22, -0.025, 0, 0, 0, Pi};
+	// cspace trueConfig = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
+	cspace trueConfig = {1.22, -0.025, 0, 0, 0, Pi};
   cout << "Xstd_Ob: " << Xstd_ob << endl;
   auto timer_begin = std::chrono::high_resolution_clock::now();
   std::random_device generator;
@@ -158,7 +160,7 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
   auto timer_end = std::chrono::high_resolution_clock::now();
   auto timer_dur = timer_end - timer_begin;
 
-  particleFilter::cspace particles_mean, tmp2;
+  cspace particles_mean, tmp2;
   estimateGaussian(particles_mean, tmp2);
   cout << "Estimate diff: ";
   double est_diff = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2])
@@ -512,13 +514,13 @@ int main()
 
  //  double cube_para[3] = { 6, 4, 2 }; // cube size: 6m x 4m x 2m with center at the origin.
  //  //double range[3][2] = { {-3.5, 3.5}, {-2.5, 2.5}, {-1.5, 1.5} };
- //  particleFilter::cspace X_true = { 2.12, 1.388, 0.818, Pi / 6 + Pi / 400, Pi / 12 + Pi / 220, Pi / 18 - Pi / 180 }; // true state of configuration
- //  //particleFilter::cspace X_true = { 0, 0, 0.818, 0, 0, 0 }; // true state of configuration
+ //  cspace X_true = { 2.12, 1.388, 0.818, Pi / 6 + Pi / 400, Pi / 12 + Pi / 220, Pi / 18 - Pi / 180 }; // true state of configuration
+ //  //cspace X_true = { 0, 0, 0.818, 0, 0, 0 }; // true state of configuration
  //  cout << "True state: " << X_true[0] << ' ' << X_true[1] << ' ' << X_true[2] << ' ' 
 	//    << X_true[3] << ' ' << X_true[4] << ' ' << X_true[5] << endl;
- //  particleFilter::cspace b_Xprior[2] = { { 2.11, 1.4, 0.81, Pi / 6, Pi / 12, Pi / 18 },
+ //  cspace b_Xprior[2] = { { 2.11, 1.4, 0.81, Pi / 6, Pi / 12, Pi / 18 },
 	// 									 { 0.03, 0.03, 0.03, Pi / 180, Pi / 180, Pi / 180 } }; // our prior belief
- //  //particleFilter::cspace b_Xprior[2] = { { 0, 0, 0.81, 0, 0, 0 },
+ //  //cspace b_Xprior[2] = { { 0, 0, 0.81, 0, 0, 0 },
  //  //									 { 0.001, 0.001, 0.001, Pi / 3600, Pi / 3600, Pi / 3600 } }; // our prior belief
 
  //  particleFilter pfilter(numParticles, b_Xprior, Xstd_ob, Xstd_tran, Xstd_scatter, R);
@@ -528,8 +530,8 @@ int main()
  //  int N_Measure = 60; // total number of measurements
  //  double M_std = 0.000; // measurement error
  //  double M[2][3]; // measurement
- //  particleFilter::cspace particles_est;
- //  particleFilter::cspace particles_est_stat;
+ //  cspace particles_est;
+ //  cspace particles_est_stat;
  //  double particle_est_diff;
 
  //  std::random_device generator;
@@ -614,7 +616,7 @@ int main()
 /*
  * Transform the touch point from particle frame
  */
-void Transform(Eigen::Vector3d &src, particleFilter::cspace config, Eigen::Vector3d &dest)
+void Transform(Eigen::Vector3d &src, cspace config, Eigen::Vector3d &dest)
 {
     Eigen::Matrix3d rotationC;
     rotationC << cos(config[5]), -sin(config[5]), 0,
@@ -634,7 +636,7 @@ void Transform(Eigen::Vector3d &src, particleFilter::cspace config, Eigen::Vecto
 /*
  * Transform the touch point from particle frame
  */
-void Transform(double measure[2][3], particleFilter::cspace src, double dest[2][3])
+void Transform(double measure[2][3], cspace src, double dest[2][3])
 {
   double rotation[3][3];
   double tempM[3];
@@ -647,7 +649,7 @@ void Transform(double measure[2][3], particleFilter::cspace src, double dest[2][
 /*
  * Inverse transform the touch point to particle frame using sampled configuration
  */
-void inverseTransform(double measure[3], particleFilter::cspace src, double dest[3])
+void inverseTransform(double measure[3], cspace src, double dest[3])
 {
   double rotation[3][3];
   double invRot[3][3];
@@ -658,7 +660,7 @@ void inverseTransform(double measure[3], particleFilter::cspace src, double dest
   subtractM(measure, transition, tempM);
   multiplyM(invRot, tempM, dest);
 }
-void inverseTransform(double measure[2][3], particleFilter::cspace src, double dest[2][3])
+void inverseTransform(double measure[2][3], cspace src, double dest[2][3])
 {
   double rotation[3][3];
   double invRot[3][3];
@@ -670,7 +672,7 @@ void inverseTransform(double measure[2][3], particleFilter::cspace src, double d
   multiplyM(invRot, tempM, dest[0]);
   multiplyM(invRot, measure[1], dest[1]);
 }
-void inverseTransform(Eigen::Vector3d &src, particleFilter::cspace config, Eigen::Vector3d &dest)
+void inverseTransform(Eigen::Vector3d &src, cspace config, Eigen::Vector3d &dest)
 {
     Eigen::Matrix3d rotationC;
     rotationC << cos(config[5]), -sin(config[5]), 0,
@@ -790,7 +792,7 @@ int getIntersection(vector<vec4x3> &mesh, double pstart[3], double dir[3], doubl
  *        R: radius of the touch probe
  * Output: distance
  */
-double testResult(vector<vec4x3> &mesh, particleFilter::cspace config, double touch[2][3], double R)
+double testResult(vector<vec4x3> &mesh, cspace config, double touch[2][3], double R)
 {
   double inv_touch[2][3];
   inverseTransform(touch, config, inv_touch);
@@ -830,7 +832,7 @@ double testResult(vector<vec4x3> &mesh, particleFilter::cspace config, double to
  * Output: 1 if empty
  *         0 if not, and then add the bin to set
  */
-int checkEmptyBin(std::unordered_set<string> *set, particleFilter::cspace config)
+int checkEmptyBin(std::unordered_set<string> *set, cspace config)
 {
   string s = "";
   for (int i = 0; i < particleFilter::cdim; i++) {
@@ -852,11 +854,11 @@ int checkEmptyBin(std::unordered_set<string> *set, particleFilter::cspace config
  *        dist: distance between center of touch probe and object
  * Output: 1 if obstacle exists
  */
-int checkObstacles(vector<vec4x3> &mesh, particleFilter::cspace config, double start[2][3], double dist)
+int checkObstacles(vector<vec4x3> &mesh, cspace config, double start[2][3], double dist)
 {
   return checkObstacles(mesh, config, start, ARM_LENGTH, dist);
 }
-int checkObstacles(vector<vec4x3> &mesh, particleFilter::cspace config, double start[2][3], double check_length, double dist)
+int checkObstacles(vector<vec4x3> &mesh, cspace config, double start[2][3], double check_length, double dist)
 {
   double inv_start[2][3];
   int countIntersections = 0;
@@ -974,7 +976,7 @@ int checkIntersections(vector<vec4x3> &mesh, double voxel_center[3], double dir[
   }
 }
 
-void calcDistance(vector<vec4x3> &mesh, particleFilter::cspace trueConfig, particleFilter::cspace meanConfig, double euclDist[2])
+void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, double euclDist[2])
 {
     int num_mesh = int(mesh.size());
     cout << "Num_Mesh " << num_mesh << endl;
@@ -1017,7 +1019,7 @@ void calcDistance(vector<vec4x3> &mesh, particleFilter::cspace trueConfig, parti
         }
     }
 }
-void transFrameConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig) {
+void transFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
 	Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
 	Eigen::Matrix3d rotationC, rotationB, rotationA;
   rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
@@ -1058,7 +1060,7 @@ void transFrameConfig(particleFilter::cspace baseConfig, particleFilter::cspace 
   // cout << absoluteTrans << endl;
 }
 
-void invTransFrameConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig) {
+void invTransFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
 	Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
 	Eigen::Matrix3d rotationC, rotationB, rotationA;
   rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
@@ -1101,7 +1103,7 @@ void invTransFrameConfig(particleFilter::cspace baseConfig, particleFilter::cspa
 }
 
 
-void transPointConfig(particleFilter::cspace baseConfig, particleFilter::cspace relativeConfig, particleFilter::cspace &absoluteConfig) {
+void transPointConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
 	Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
 	Eigen::Matrix3d rotationC, rotationB, rotationA;
   rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
@@ -1135,7 +1137,7 @@ int particleFilter::getNumParticles() {
 	return root->child[0]->numParticles;
 }
 
-void copyParticles(particleFilter::cspace config, particleFilter::fullCspace &fullConfig, int idx) {
+void copyParticles(cspace config, fullCspace &fullConfig, int idx) {
   for (int i = 0; i < particleFilter::cdim; i ++) {
     fullConfig[idx + i] = config[i];
   }

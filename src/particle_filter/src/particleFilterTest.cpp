@@ -2,6 +2,7 @@
 #include "particleFilter3DOF.h"
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/PoseArray.h>
+#include "definitions.h"
 #include "particle_filter/PFilterInit.h"
 #include "particle_filter/AddObservation.h"
 #include "gazebo_ray_trace/plotRayUtils.h"
@@ -28,7 +29,7 @@ public:
   void initDistribution(particle_filter::PFilterInit points);
 };
 
-void computeInitialDistribution(particleFilter::cspace binit[2],
+void computeInitialDistribution(cspace binit[2],
 				tf::Point p1, tf::Point p2, tf::Point p3)
 {
   tf::Vector3 d1 = p2-p1;
@@ -51,7 +52,7 @@ double SQ(double d)
 }
 
 
-tf::Pose poseAt(double y, double z, particleFilter::cspace plane)
+tf::Pose poseAt(double y, double z, cspace plane)
 {
   double t = atan(plane[0]);
   double p = acos(plane[1]/sqrt(1 + SQ(plane[0]) + SQ(plane[1])));
@@ -85,7 +86,7 @@ void PFilterTest::initDistribution(particle_filter::PFilterInit points)
   tf::Point touch1(points.p1.x, points.p1.y, points.p1.z);
   tf::Point touch2(points.p2.x, points.p2.y, points.p2.z);
   tf::Point touch3(points.p3.x, points.p3.y, points.p3.z);
-  particleFilter::cspace binit[2];
+  cspace binit[2];
   computeInitialDistribution(binit, touch1, touch2, touch3);
   ROS_INFO("Computed Initial Distribution");
   pFilter_.setDistribution(binit);
@@ -94,7 +95,7 @@ void PFilterTest::initDistribution(particle_filter::PFilterInit points)
 
 geometry_msgs::PoseArray PFilterTest::getParticlePoseArray()
 {
-  particleFilter::cspace particles[NUM_PARTICLES];
+  cspace particles[NUM_PARTICLES];
   pFilter_.getAllParticles(particles);
   tf::Transform trans = plt.getTrans();
 
@@ -123,7 +124,7 @@ PFilterTest::PFilterTest(int n_particles) :
   // tf::Point touch1(0, 0, 0);
   // tf::Point touch2(0, 1, -1);
   // tf::Point touch3(1, -1, 0);
-  // particleFilter::cspace binit[2];
+  // cspace binit[2];
   // computeInitialDistribution(binit, touch1, touch2, touch3);
   // ROS_INFO("Computed Initial Distribution");
   // pFilter_.setDistribution(binit);
@@ -140,7 +141,7 @@ int main(int argc, char **argv)
   
   PFilterTest pFilterTest(NUM_PARTICLES);
 
-  // particleFilter::cspace binit[2];
+  // cspace binit[2];
 
   
   // double obs[3] = {0, 1, -1};
