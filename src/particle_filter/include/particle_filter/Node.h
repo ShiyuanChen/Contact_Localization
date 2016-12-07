@@ -7,16 +7,16 @@
 #include <Eigen/Dense>
 #include "definitions.h"
 #include "distanceTransformNew.h"
-#include "particleFilter.h"
 
 using namespace std;
 class Parent;
-
-// class particleFilter;
+class BayesNet;
+class particleFilter;
 class Node
 {
   friend class particleFilter;
   friend class Parent;
+  friend class BayesNet;
  public:
   static const int cdim = 6;
   int numParticles; // number of particles
@@ -55,8 +55,7 @@ class Node
   void createParticles(cspace b_Xprior[2], int n_particles, int isRoot);
   void createParticles();
   void addDatum(double dist, double tol);
-  // bool updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, double Xstd_ob, double R, bool miss);
-  bool update(double cur_M[2][3], double Xstd_ob, double R);
+  // bool update(double cur_M[2][3], double Xstd_ob, double R);
   void sampleConfig(cspace &config); // sample a config from the particles uniformly.
   void propagate();
   void resampleParticles(Particles &rootParticles, Particles &rootParticlesPrev, int n, double *W);
@@ -94,5 +93,19 @@ protected:
 
 };
 
+void Transform(double measure[2][3], cspace src, double dest[2][3]);
+void inverseTransform(double measure[3], cspace src, double dest[3]);
+void inverseTransform(double measure[2][3], cspace src, double dest[2][3]);
+
+void Transform(Eigen::Vector3d &src, cspace config, Eigen::Vector3d &dest);
+void inverseTransform(Eigen::Vector3d &src, cspace config, Eigen::Vector3d &dest);
+
+void transPointConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
+void transFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
+void invTransFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
+void copyParticles(cspace config, fullCspace &fullConfig, int idx);
+void copyParticles(cspace config, jointCspace &jointConfig, int idx);
+int checkEmptyBin(std::unordered_set<string> *set, cspace config);
+void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, double euclDist[2]);
 #endif // NODE_H
 

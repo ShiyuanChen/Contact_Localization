@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <Eigen/Dense>
 #include "definitions.h"
+#include "BayesNet.h"
 #include "distanceTransformNew.h"
 using namespace std;
 
@@ -20,7 +21,7 @@ class particleFilter
   particleFilter (int n_particles, cspace b_init[2], 
 				double Xstd_ob=0.0001, double R=0.01);
 
-  void addObservation (double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss = false);
+  void addObservation (double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss, int datum);
   //void addObservation (double obs[3], double cube[3], int idx_obs);
   void estimateGaussian(cspace &x_mean, cspace &x_est_stat);
   void getAllParticles(Particles &particles_dest);
@@ -32,7 +33,8 @@ class particleFilter
   double Xstd_ob; // observation measurement error
 
   double R; // probe radius
-  Node *root;
+  // Node *root;
+  BayesNet bayesNet;
   // internal variables
   cspace b_Xprior[2]; // Initial distribution (mean and variance)
   //cspace b_Xpre[2];   // Previous (estimated) distribution (mean and variance)
@@ -66,9 +68,5 @@ int checkObstacles(vector<vec4x3> &mesh, cspace config, double start[2][3], doub
 int checkIntersections(vector<vec4x3> &mesh, double voxel_center[3], double dir[3], double check_length, double &dist);
 int checkEmptyBin(std::unordered_set<string> *set, cspace config);
 void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, double euclDist[2]);
-void transPointConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
-void transFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
-void invTransFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig);
-void copyParticles(cspace config, fullCspace &fullConfig, int idx);
 #endif // PARTICLE_FILTER_H
 

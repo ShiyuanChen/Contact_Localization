@@ -101,10 +101,10 @@ void computeInitialDistribution(cspace binit[2], ros::NodeHandle n)
 
 }
 
-double SQ(double d)
-{
-  return d*d;
-}
+// double SQ(double d)
+// {
+//   return d*d;
+// }
 
 
 /*
@@ -137,13 +137,15 @@ bool PFilterTest::addObs(particle_filter::AddObservation::Request &req,
 			 particle_filter::AddObservation::Response &resp)
 {
   geometry_msgs::Point obs = req.p;
-  geometry_msgs::Point dir = req.dir; 
+  geometry_msgs::Point dir = req.dir;
+  int datum = req.datum;
+  ROS_INFO("Current update datum: %d", datum);
   ROS_INFO("Adding Observation...") ;
   ROS_INFO("point: %f, %f, %f", obs.x, obs.y, obs.z);
   ROS_INFO("dir: %f, %f, %f", dir.x, dir.y, dir.z);
   double obs2[2][3] = {{obs.x, obs.y, obs.z}, {dir.x, dir.y, dir.z}};
 
-  pFilter_.addObservation(obs2, mesh, dist_transform, 0);
+  pFilter_.addObservation(obs2, mesh, dist_transform, 0, datum);
 
   ROS_INFO("...Done adding observation");
   pub_particles.publish(getParticlePoseArray());

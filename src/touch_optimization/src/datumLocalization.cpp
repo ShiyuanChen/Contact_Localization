@@ -338,6 +338,56 @@ int main(int argc, char **argv)
     particle_filter::AddObservation pfilter_obs;
     pfilter_obs.request.p = obs;
     pfilter_obs.request.dir = dir;
+    pfilter_obs.request.datum = 4;
+    if(!srv_add.call(pfilter_obs)){
+      ROS_INFO("Failed to call add observation");
+    }
+
+    ros::spinOnce();
+    while(!rayt.particleHandler.newParticles){
+      ROS_INFO_THROTTLE(10, "Waiting for new particles...");
+      ros::spinOnce();
+      ros::Duration(.1).sleep();
+    }
+    i ++;
+  }
+  i = 0;
+  //for(int i=0; i<20; i++){
+  while (i < 3) {
+    ros::Duration(2).sleep();
+    //tf::Point start(0.95,0,-0.15);
+    //tf::Point end(0.95,2,-0.15);
+    tf::Point start, end;
+    // randomSelection(plt, rayt, start, end);
+    fixedSelectionPlane(plt, rayt, start, end);
+
+    Ray measurement(start, end);
+    
+    // double distToPart = 1.025;
+    double distToPart = 1;
+    if(!rayt.traceRay(measurement, distToPart)){
+      ROS_INFO("NO INTERSECTION, Skipping");
+      continue;
+    }
+    tf::Point intersection(start.getX(), start.getY(), start.getZ());
+    intersection = intersection + (end-start).normalize() * (distToPart - radius);
+  std::cout << "Intersection at: " << intersection.getX() << "  " << intersection.getY() << "   " << intersection.getZ() << std::endl;
+    tf::Point ray_dir(end.x()-start.x(),end.y()-start.y(),end.z()-start.z());
+    ray_dir = ray_dir.normalize();
+    obs.x=intersection.getX() + randn(rd); 
+    obs.y=intersection.getY() + randn(rd); 
+    obs.z=intersection.getZ() + randn(rd);
+    dir.x=ray_dir.x();
+    dir.y=ray_dir.y();
+    dir.z=ray_dir.z();
+    
+    plt.plotRay(Ray(start, end));
+    // ros::Duration(1).sleep();
+
+    particle_filter::AddObservation pfilter_obs;
+    pfilter_obs.request.p = obs;
+    pfilter_obs.request.dir = dir;
+    pfilter_obs.request.datum = 1;
     if(!srv_add.call(pfilter_obs)){
       ROS_INFO("Failed to call add observation");
     }

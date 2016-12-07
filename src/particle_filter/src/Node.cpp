@@ -12,33 +12,9 @@
 #include "raytri.h"
 #include "circleEllipse.h"
 #include "distanceTransformNew.h"
-#include "particleFilter.h"
 #include "matrix.h"
 #include "Node.h"
 
-#define COMBINE_RAYCASTING
-#define ADAPTIVE_NUMBER
-// #define ADAPTIVE_BANDWIDTH
-
-#define Pi          3.141592653589793238462643383279502884L
-
-#define SQ(x) ((x)*(x))
-#define max3(a,b,c) ((a>b?a:b)>c?(a>b?a:b):c)
-#define max2(a,b) (a>b?a:b)
-#define min3(a,b,c) ((a<b?a:b)<c?(a<b?a:b):c)
-#define min2(a,b) (a<b?a:b)
-typedef array<array<float, 3>, 4> vec4x3;
-#define epsilon 0.0001
-#define ARM_LENGTH 0.8
-#define N_MIN 50
-#define DISPLACE_INTERVAL 0.015
-#define SAMPLE_RATE 0.50
-#define MAX_ITERATION 100000
-#define COV_MULTIPLIER 5.0
-#define MIN_STD 1.0e-7
-#define BEAM_RADIUS 0.002
-#define BEAM_STEPSIZE 0.001
-#define NUM_POLY_ITERATIONS 20
 
 using namespace std;
 
@@ -694,208 +670,208 @@ void Node::propagate() {
   }
 }
 
-bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
-  cout << "Start updating!" << endl;
-  std::unordered_set<string> bins;
-  std::random_device rd;
-  std::normal_distribution<double> dist(0, 1);
-  std::uniform_real_distribution<double> distribution(0, numParticles);
-  int i = 0;
-  int count = 0;
-  int count2 = 0;
-  int count3 = 0;
-  bool iffar = false;
-  FullParticles b_X = fullParticlesPrev;
-  int idx = 0;
-  fullCspace tempFullState;
-  tempFullState.resize(fulldim);
-  cspace tempState;
-  double D;
-  double cur_inv_M[2][3];
+// bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
+//   cout << "Start updating!" << endl;
+//   std::unordered_set<string> bins;
+//   std::random_device rd;
+//   std::normal_distribution<double> dist(0, 1);
+//   std::uniform_real_distribution<double> distribution(0, numParticles);
+//   int i = 0;
+//   int count = 0;
+//   int count2 = 0;
+//   int count3 = 0;
+//   bool iffar = false;
+//   FullParticles b_X = fullParticlesPrev;
+//   int idx = 0;
+//   fullCspace tempFullState;
+//   tempFullState.resize(fulldim);
+//   cspace tempState;
+//   double D;
+//   double cur_inv_M[2][3];
   
-  double unsigned_dist_check = R + 2 * Xstd_ob;
-  double signed_dist_check = 2 * Xstd_ob;
+//   double unsigned_dist_check = R + 2 * Xstd_ob;
+//   double signed_dist_check = 2 * Xstd_ob;
 
-  //Eigen::Vector3d gradient;
-  Eigen::Vector3d touch_dir;
-  int num_bins = 0;
-  int count_bar = 0;
-  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155;
-  // cout << "Coeff: " << coeff << endl;
-  Eigen::MatrixXd H_cov = coeff * full_cov_mat;
-  // cout << "full_cov_mat: " << full_cov_mat << endl;
-  // cout << "cov_mat: " << cov_mat << endl;
-  // cout << "H_cov: " << H_cov << endl;
+//   //Eigen::Vector3d gradient;
+//   Eigen::Vector3d touch_dir;
+//   int num_bins = 0;
+//   int count_bar = 0;
+//   double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155;
+//   // cout << "Coeff: " << coeff << endl;
+//   Eigen::MatrixXd H_cov = coeff * full_cov_mat;
+//   // cout << "full_cov_mat: " << full_cov_mat << endl;
+//   // cout << "cov_mat: " << cov_mat << endl;
+//   // cout << "H_cov: " << H_cov << endl;
 
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(H_cov);
-  Eigen::MatrixXd rot = eigenSolver.eigenvectors(); 
-  Eigen::VectorXd scl = eigenSolver.eigenvalues();
-  for (int j = 0; j < fulldim; j++) {
-    scl(j, 0) = sqrt(max2(scl(j, 0),0));
-  }
-  Eigen::VectorXd samples(fulldim, 1);
-  Eigen::VectorXd rot_sample(fulldim, 1);
-  if (type == 1) { // Plane
-    cout << "Start updating Plane!" << endl;
-    while (i < numParticles && i < maxNumParticles) {
-      idx = int(floor(distribution(rd)));
+//   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(H_cov);
+//   Eigen::MatrixXd rot = eigenSolver.eigenvectors(); 
+//   Eigen::VectorXd scl = eigenSolver.eigenvalues();
+//   for (int j = 0; j < fulldim; j++) {
+//     scl(j, 0) = sqrt(max2(scl(j, 0),0));
+//   }
+//   Eigen::VectorXd samples(fulldim, 1);
+//   Eigen::VectorXd rot_sample(fulldim, 1);
+//   if (type == 1) { // Plane
+//     cout << "Start updating Plane!" << endl;
+//     while (i < numParticles && i < maxNumParticles) {
+//       idx = int(floor(distribution(rd)));
 
-      for (int j = 0; j < fulldim; j++) {
-        samples(j, 0) = scl(j, 0) * dist(rd);
-      }
-      rot_sample = rot*samples;
-      for (int j = 0; j < fulldim; j++) {
-        /* TODO: use quaternions instead of euler angles */
-        tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
-      }
-      for (int j = 0; j < cdim; j++) {
-        /* TODO: use quaternions instead of euler angles */
-        tempState[j] = tempFullState[j];
-      }
-      inverseTransform(cur_M, tempState, cur_inv_M);
-      touch_dir << cur_inv_M[1][0], cur_inv_M[1][1], cur_inv_M[1][2];
-      D = abs(cur_inv_M[0][1] - R);
-      // cout << "D: " << D << endl;
+//       for (int j = 0; j < fulldim; j++) {
+//         samples(j, 0) = scl(j, 0) * dist(rd);
+//       }
+//       rot_sample = rot*samples;
+//       for (int j = 0; j < fulldim; j++) {
+//         /* TODO: use quaternions instead of euler angles */
+//         tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
+//       }
+//       for (int j = 0; j < cdim; j++) {
+//         /* TODO: use quaternions instead of euler angles */
+//         tempState[j] = tempFullState[j];
+//       }
+//       inverseTransform(cur_M, tempState, cur_inv_M);
+//       touch_dir << cur_inv_M[1][0], cur_inv_M[1][1], cur_inv_M[1][2];
+//       D = abs(cur_inv_M[0][1] - R);
+//       // cout << "D: " << D << endl;
       
-      // if (xind >= (dist_transform->num_voxels[0] - 1) || yind >= (dist_transform->num_voxels[1] - 1) || zind >= (dist_transform->num_voxels[2] - 1))
-      //  continue;
+//       // if (xind >= (dist_transform->num_voxels[0] - 1) || yind >= (dist_transform->num_voxels[1] - 1) || zind >= (dist_transform->num_voxels[2] - 1))
+//       //  continue;
           
-      count += 1;
-      // if (sqrt(count) == floor(sqrt(count))) cout << "DDDD " << D << endl;
-      if (D <= signed_dist_check) {
-        // if (sqrt(count) == floor(sqrt(count))) cout << "D " << D << endl;
-        count2 ++;
-        for (int j = 0; j < cdim; j++) {
-          particles[i][j] = tempState[j];
-        }
-        for (int j = 0; j < fulldim; j++) {
-          fullParticles[i][j] = tempFullState[j];
-        }
-        if (checkEmptyBin(&bins, particles[i]) == 1) {
-          num_bins++;
-          // if (i >= N_MIN) {
-          //int numBins = bins.size();
-          numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
-          // }
-        }
-        //double d = testResult(mesh, particles[i], cur_M, R);
-        //if (d > 0.01)
-        //  cout << cur_inv_M[0][0] << "  " << cur_inv_M[0][1] << "  " << cur_inv_M[0][2] << "   " << d << "   " << D << //"   " << gradient << "   " << gradient.dot(touch_dir) << 
-        //       "   " << dist_adjacent[0] << "   " << dist_adjacent[1] << "   " << dist_adjacent[2] << "   " << particles[i][2] << endl;
-        i += 1;
-      }
-    }
-    cout << "End updating Plane!" << endl;
-  } else if (type == 2) { // Edge
-    // for (int i = 0; i < numParticles; i ++) {
-    //   // for (int j = 0; j < cdim; j ++) {
-    //   //   cout << particles[i][j] << " ,";
-    //   // }
-    //   cout << particles[i][0] << " ,";
+//       count += 1;
+//       // if (sqrt(count) == floor(sqrt(count))) cout << "DDDD " << D << endl;
+//       if (D <= signed_dist_check) {
+//         // if (sqrt(count) == floor(sqrt(count))) cout << "D " << D << endl;
+//         count2 ++;
+//         for (int j = 0; j < cdim; j++) {
+//           particles[i][j] = tempState[j];
+//         }
+//         for (int j = 0; j < fulldim; j++) {
+//           fullParticles[i][j] = tempFullState[j];
+//         }
+//         if (checkEmptyBin(&bins, particles[i]) == 1) {
+//           num_bins++;
+//           // if (i >= N_MIN) {
+//           //int numBins = bins.size();
+//           numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
+//           // }
+//         }
+//         //double d = testResult(mesh, particles[i], cur_M, R);
+//         //if (d > 0.01)
+//         //  cout << cur_inv_M[0][0] << "  " << cur_inv_M[0][1] << "  " << cur_inv_M[0][2] << "   " << d << "   " << D << //"   " << gradient << "   " << gradient.dot(touch_dir) << 
+//         //       "   " << dist_adjacent[0] << "   " << dist_adjacent[1] << "   " << dist_adjacent[2] << "   " << particles[i][2] << endl;
+//         i += 1;
+//       }
+//     }
+//     cout << "End updating Plane!" << endl;
+//   } else if (type == 2) { // Edge
+//     // for (int i = 0; i < numParticles; i ++) {
+//     //   // for (int j = 0; j < cdim; j ++) {
+//     //   //   cout << particles[i][j] << " ,";
+//     //   // }
+//     //   cout << particles[i][0] << " ,";
       
-    // }
-    // cout << endl;
-    // for (int i = 0; i < numParticles; i ++) {
-    //   // for (int j = 0; j < 18; j ++) {
-    //   //   cout << fullParticles[i][j] << " ,";
-    //   // }
-    //   cout << fullParticles[i][0] << " ,";
-    // }
-    //       cout << endl;
+//     // }
+//     // cout << endl;
+//     // for (int i = 0; i < numParticles; i ++) {
+//     //   // for (int j = 0; j < 18; j ++) {
+//     //   //   cout << fullParticles[i][j] << " ,";
+//     //   // }
+//     //   cout << fullParticles[i][0] << " ,";
+//     // }
+//     //       cout << endl;
 
-    while (i < numParticles && i < maxNumParticles) {
-      idx = int(floor(distribution(rd)));
+//     while (i < numParticles && i < maxNumParticles) {
+//       idx = int(floor(distribution(rd)));
 
-      for (int j = 0; j < fulldim; j++) {
-        samples(j, 0) = scl(j, 0) * dist(rd);
-      }
-      rot_sample = rot*samples;
-      for (int j = 0; j < fulldim; j++) {
-        /* TODO: use quaternions instead of euler angles */
-        tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
-      }
+//       for (int j = 0; j < fulldim; j++) {
+//         samples(j, 0) = scl(j, 0) * dist(rd);
+//       }
+//       rot_sample = rot*samples;
+//       for (int j = 0; j < fulldim; j++) {
+//         /* TODO: use quaternions instead of euler angles */
+//         tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
+//       }
 
-      for (int j = 0; j < cdim; j++) {
-        /* TODO: use quaternions instead of euler angles */
-        tempState[j] = tempFullState[j];
-      }
-      Eigen::Vector3d x1, x2, x0, tmp1, tmp2;
-      x1 << tempState[0], tempState[1], tempState[2];
-      x2 << tempState[3], tempState[4], tempState[5];
-      x0 << cur_M[0][0], cur_M[0][1], cur_M[0][2];
-      tmp1 = x1 - x0;
-      tmp2 = x2 - x1;
-      D = (tmp1.squaredNorm() * tmp2.squaredNorm() - pow(tmp1.dot(tmp2),2)) / tmp2.squaredNorm();
-      D = abs(sqrt(D)- R);
-      // cout << "Cur distance: " << D << endl;
-      // cout << "D: " << D << endl;
+//       for (int j = 0; j < cdim; j++) {
+//         /* TODO: use quaternions instead of euler angles */
+//         tempState[j] = tempFullState[j];
+//       }
+//       Eigen::Vector3d x1, x2, x0, tmp1, tmp2;
+//       x1 << tempState[0], tempState[1], tempState[2];
+//       x2 << tempState[3], tempState[4], tempState[5];
+//       x0 << cur_M[0][0], cur_M[0][1], cur_M[0][2];
+//       tmp1 = x1 - x0;
+//       tmp2 = x2 - x1;
+//       D = (tmp1.squaredNorm() * tmp2.squaredNorm() - pow(tmp1.dot(tmp2),2)) / tmp2.squaredNorm();
+//       D = abs(sqrt(D)- R);
+//       // cout << "Cur distance: " << D << endl;
+//       // cout << "D: " << D << endl;
       
-      // if (xind >= (dist_transform->num_voxels[0] - 1) || yind >= (dist_transform->num_voxels[1] - 1) || zind >= (dist_transform->num_voxels[2] - 1))
-      //  continue;
+//       // if (xind >= (dist_transform->num_voxels[0] - 1) || yind >= (dist_transform->num_voxels[1] - 1) || zind >= (dist_transform->num_voxels[2] - 1))
+//       //  continue;
           
-      count += 1;
-      // if (sqrt(count) == floor(sqrt(count))) cout << "DDDD " << D << endl;
-      if (D <= signed_dist_check) {
-        // if (sqrt(count) == floor(sqrt(count))) cout << "D " << D << endl;
-        count2 ++;
-        for (int j = 0; j < cdim; j++) {
-          particles[i][j] = tempState[j];
-        }
-        for (int j = 0; j < fulldim; j++) {
-          fullParticles[i][j] = tempFullState[j];
-        }
-        if (checkEmptyBin(&bins, particles[i]) == 1) {
-          num_bins++;
-          // if (i >= N_MIN) {
-          //int numBins = bins.size();
-          numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
-          // }
-        }
-        //double d = testResult(mesh, particles[i], cur_M, R);
-        //if (d > 0.01)
-        //  cout << cur_inv_M[0][0] << "  " << cur_inv_M[0][1] << "  " << cur_inv_M[0][2] << "   " << d << "   " << D << //"   " << gradient << "   " << gradient.dot(touch_dir) << 
-        //       "   " << dist_adjacent[0] << "   " << dist_adjacent[1] << "   " << dist_adjacent[2] << "   " << particles[i][2] << endl;
-        i += 1;
-      }
-    }
-    cout << "End updating Edge!" << endl;
-    Node *p = parent[0]->node;
-    if (p->type == 1) {
-      p->update(cur_M, Xstd_ob, R);
-    }
+//       count += 1;
+//       // if (sqrt(count) == floor(sqrt(count))) cout << "DDDD " << D << endl;
+//       if (D <= signed_dist_check) {
+//         // if (sqrt(count) == floor(sqrt(count))) cout << "D " << D << endl;
+//         count2 ++;
+//         for (int j = 0; j < cdim; j++) {
+//           particles[i][j] = tempState[j];
+//         }
+//         for (int j = 0; j < fulldim; j++) {
+//           fullParticles[i][j] = tempFullState[j];
+//         }
+//         if (checkEmptyBin(&bins, particles[i]) == 1) {
+//           num_bins++;
+//           // if (i >= N_MIN) {
+//           //int numBins = bins.size();
+//           numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
+//           // }
+//         }
+//         //double d = testResult(mesh, particles[i], cur_M, R);
+//         //if (d > 0.01)
+//         //  cout << cur_inv_M[0][0] << "  " << cur_inv_M[0][1] << "  " << cur_inv_M[0][2] << "   " << d << "   " << D << //"   " << gradient << "   " << gradient.dot(touch_dir) << 
+//         //       "   " << dist_adjacent[0] << "   " << dist_adjacent[1] << "   " << dist_adjacent[2] << "   " << particles[i][2] << endl;
+//         i += 1;
+//       }
+//     }
+//     cout << "End updating Edge!" << endl;
+//     Node *p = parent[0]->node;
+//     if (p->type == 1) {
+//       p->update(cur_M, Xstd_ob, R);
+//     }
     
-  }
-  cout << "Number of total iterations: " << count << endl;
-  cout << "Number of iterations after unsigned_dist_check: " << count2 << endl;
-  cout << "Number of iterations before safepoint check: " << count3 << endl;
-  cout << "Number of occupied bins: " << num_bins << endl;
-  cout << "Number of particles: " << numParticles << endl;
+//   }
+//   cout << "Number of total iterations: " << count << endl;
+//   cout << "Number of iterations after unsigned_dist_check: " << count2 << endl;
+//   cout << "Number of iterations before safepoint check: " << count3 << endl;
+//   cout << "Number of occupied bins: " << num_bins << endl;
+//   cout << "Number of particles: " << numParticles << endl;
   
-  particlesPrev = particles;
-  fullParticlesPrev = fullParticles;
+//   particlesPrev = particles;
+//   fullParticlesPrev = fullParticles;
 
-  double* tmpParticles = new double[numParticles * fulldim];
-  for(int i = 0; i < numParticles; ++i) {
-    for (int j = 0; j < fulldim; j ++) {
-      tmpParticles[i * fulldim + j] = fullParticlesPrev[i][j];
-    }
-  }
+//   double* tmpParticles = new double[numParticles * fulldim];
+//   for(int i = 0; i < numParticles; ++i) {
+//     for (int j = 0; j < fulldim; j ++) {
+//       tmpParticles[i * fulldim + j] = fullParticlesPrev[i][j];
+//     }
+//   }
 
-  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>(tmpParticles, fulldim, numParticles);
-  Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
-  full_cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
-  mat = Eigen::Map<Eigen::MatrixXd>((double *)particles.data(), cdim, numParticles);
-  mat_centered = mat.colwise() - mat.rowwise().mean();
-  cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+//   Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>(tmpParticles, fulldim, numParticles);
+//   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
+//   full_cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
+//   mat = Eigen::Map<Eigen::MatrixXd>((double *)particles.data(), cdim, numParticles);
+//   mat_centered = mat.colwise() - mat.rowwise().mean();
+//   cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
 
-  delete[] tmpParticles;
+//   delete[] tmpParticles;
 
-  cout << "Start to propogate update to root" << endl;
-  // propagate();
+//   cout << "Start to propogate update to root" << endl;
+//   // propagate();
 
-  cout << "End updating!" << endl;
-  return iffar;
-}
+//   cout << "End updating!" << endl;
+//   return iffar;
+// }
 
 
 // bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
@@ -1049,3 +1025,274 @@ bool Node::update(double cur_M[2][3], double Xstd_ob, double R) {
 
 //   return iffar;
 // }
+
+
+void transFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
+  Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
+  Eigen::Matrix3d rotationC, rotationB, rotationA;
+  rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
+             sin(baseConfig[5]), cos(baseConfig[5]), 0,
+             0, 0, 1;
+  rotationB << cos(baseConfig[4]), 0 , sin(baseConfig[4]),
+             0, 1, 0,
+             -sin(baseConfig[4]), 0, cos(baseConfig[4]);
+  rotationA << 1, 0, 0 ,
+             0, cos(baseConfig[3]), -sin(baseConfig[3]),
+             0, sin(baseConfig[3]), cos(baseConfig[3]);
+  Eigen::Matrix3d rotation = rotationC * rotationB * rotationA;
+  baseTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), baseConfig[0],
+               rotation(1, 0), rotation(1, 1), rotation(1, 2), baseConfig[1],
+               rotation(2, 0), rotation(2, 1), rotation(2, 2), baseConfig[2],
+               0,              0,              0,              1;
+  rotationC << cos(relativeConfig[5]), -sin(relativeConfig[5]), 0,
+             sin(relativeConfig[5]), cos(relativeConfig[5]), 0,
+             0, 0, 1;
+  rotationB << cos(relativeConfig[4]), 0 , sin(relativeConfig[4]),
+             0, 1, 0,
+             -sin(relativeConfig[4]), 0, cos(relativeConfig[4]);
+  rotationA << 1, 0, 0 ,
+             0, cos(relativeConfig[3]), -sin(relativeConfig[3]),
+             0, sin(relativeConfig[3]), cos(relativeConfig[3]);
+  rotation = rotationC * rotationB * rotationA;
+  relativeTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), relativeConfig[0],
+                   rotation(1, 0), rotation(1, 1), rotation(1, 2), relativeConfig[1],
+                   rotation(2, 0), rotation(2, 1), rotation(2, 2), relativeConfig[2],
+                   0,              0,              0,              1;
+  absoluteTrans = baseTrans * relativeTrans;
+  absoluteConfig[0] = absoluteTrans(0,3);
+  absoluteConfig[1] = absoluteTrans(1,3);
+  absoluteConfig[2] = absoluteTrans(2,3);
+  absoluteConfig[3] = atan2(absoluteTrans(2,1), absoluteTrans(2,2));
+  absoluteConfig[4] = atan2(-absoluteTrans(2,0), sqrt(SQ(absoluteTrans(2,1)) + SQ(absoluteTrans(2,2))));
+  absoluteConfig[5] = atan2(absoluteTrans(1,0), absoluteTrans(0,0));
+  // cout << absoluteTrans << endl;
+}
+
+void invTransFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
+  Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
+  Eigen::Matrix3d rotationC, rotationB, rotationA;
+  rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
+             sin(baseConfig[5]), cos(baseConfig[5]), 0,
+             0, 0, 1;
+  rotationB << cos(baseConfig[4]), 0 , sin(baseConfig[4]),
+             0, 1, 0,
+             -sin(baseConfig[4]), 0, cos(baseConfig[4]);
+  rotationA << 1, 0, 0 ,
+             0, cos(baseConfig[3]), -sin(baseConfig[3]),
+             0, sin(baseConfig[3]), cos(baseConfig[3]);
+  Eigen::Matrix3d rotation = rotationC * rotationB * rotationA;
+  baseTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), baseConfig[0],
+               rotation(1, 0), rotation(1, 1), rotation(1, 2), baseConfig[1],
+               rotation(2, 0), rotation(2, 1), rotation(2, 2), baseConfig[2],
+               0,              0,              0,              1;
+  baseTrans = baseTrans.inverse().eval();
+  rotationC << cos(relativeConfig[5]), -sin(relativeConfig[5]), 0,
+             sin(relativeConfig[5]), cos(relativeConfig[5]), 0,
+             0, 0, 1;
+  rotationB << cos(relativeConfig[4]), 0 , sin(relativeConfig[4]),
+             0, 1, 0,
+             -sin(relativeConfig[4]), 0, cos(relativeConfig[4]);
+  rotationA << 1, 0, 0 ,
+             0, cos(relativeConfig[3]), -sin(relativeConfig[3]),
+             0, sin(relativeConfig[3]), cos(relativeConfig[3]);
+  rotation = rotationC * rotationB * rotationA;
+  relativeTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), relativeConfig[0],
+                   rotation(1, 0), rotation(1, 1), rotation(1, 2), relativeConfig[1],
+                   rotation(2, 0), rotation(2, 1), rotation(2, 2), relativeConfig[2],
+                   0,              0,              0,              1;
+  absoluteTrans = baseTrans * relativeTrans;
+  absoluteConfig[0] = absoluteTrans(0,3);
+  absoluteConfig[1] = absoluteTrans(1,3);
+  absoluteConfig[2] = absoluteTrans(2,3);
+  absoluteConfig[3] = atan2(absoluteTrans(2,1), absoluteTrans(2,2));
+  absoluteConfig[4] = atan2(-absoluteTrans(2,0), sqrt(SQ(absoluteTrans(2,1)) + SQ(absoluteTrans(2,2))));
+  absoluteConfig[5] = atan2(absoluteTrans(1,0), absoluteTrans(0,0));
+  // cout << absoluteTrans << endl;
+}
+
+
+void transPointConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
+  Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
+  Eigen::Matrix3d rotationC, rotationB, rotationA;
+  rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
+             sin(baseConfig[5]), cos(baseConfig[5]), 0,
+             0, 0, 1;
+  rotationB << cos(baseConfig[4]), 0 , sin(baseConfig[4]),
+             0, 1, 0,
+             -sin(baseConfig[4]), 0, cos(baseConfig[4]);
+  rotationA << 1, 0, 0 ,
+             0, cos(baseConfig[3]), -sin(baseConfig[3]),
+             0, sin(baseConfig[3]), cos(baseConfig[3]);
+  Eigen::Matrix3d rotation = rotationC * rotationB * rotationA;
+  baseTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), baseConfig[0],
+               rotation(1, 0), rotation(1, 1), rotation(1, 2), baseConfig[1],
+               rotation(2, 0), rotation(2, 1), rotation(2, 2), baseConfig[2],
+               0,              0,              0,              1;
+  Eigen::Vector4d endPoint1, endPoint2;
+  endPoint1 << relativeConfig[0], relativeConfig[1], relativeConfig[2], 1;
+  endPoint2 << relativeConfig[3], relativeConfig[4], relativeConfig[5], 1;
+  endPoint1 = baseTrans * endPoint1;
+  endPoint2 = baseTrans * endPoint2;
+  absoluteConfig[0] = endPoint1(0);
+  absoluteConfig[1] = endPoint1(1);
+  absoluteConfig[2] = endPoint1(2);
+  absoluteConfig[3] = endPoint2(0);
+  absoluteConfig[4] = endPoint2(1);
+  absoluteConfig[5] = endPoint2(2);
+}
+
+void copyParticles(cspace config, fullCspace &fullConfig, int idx) {
+  for (int i = 0; i < Node::cdim; i ++) {
+    fullConfig[idx + i] = config[i];
+  }
+}
+
+
+void copyParticles(cspace config, jointCspace &jointConfig, int idx) {
+  for (int i = 0; i < Node::cdim; i ++) {
+    jointConfig[idx + i] = config[i];
+  }
+}
+
+/*
+ * Transform the touch point from particle frame
+ */
+void Transform(Eigen::Vector3d &src, cspace config, Eigen::Vector3d &dest)
+{
+    Eigen::Matrix3d rotationC;
+    rotationC << cos(config[5]), -sin(config[5]), 0,
+               sin(config[5]), cos(config[5]), 0,
+               0, 0, 1;
+    Eigen::Matrix3d rotationB;
+    rotationB << cos(config[4]), 0 , sin(config[4]),
+               0, 1, 0,
+               -sin(config[4]), 0, cos(config[4]);
+    Eigen::Matrix3d rotationA;
+    rotationA << 1, 0, 0 ,
+               0, cos(config[3]), -sin(config[3]),
+               0, sin(config[3]), cos(config[3]);
+    Eigen::Vector3d transitionV(config[0], config[1], config[2]);
+    dest = rotationC * rotationB * rotationA * src + transitionV;
+}
+/*
+ * Transform the touch point from particle frame
+ */
+void Transform(double measure[2][3], cspace src, double dest[2][3])
+{
+  double rotation[3][3];
+  double tempM[3];
+  rotationMatrix(src, rotation);
+  multiplyM(rotation, measure[0], tempM);
+  multiplyM(rotation, measure[1], dest[1]);
+  double transition[3] = { src[0], src[1], src[2] };
+  addM(tempM, transition, dest[0]);
+}
+/*
+ * Inverse transform the touch point to particle frame using sampled configuration
+ */
+void inverseTransform(double measure[3], cspace src, double dest[3])
+{
+  double rotation[3][3];
+  double invRot[3][3];
+  double tempM[3];
+  rotationMatrix(src, rotation);
+  inverseMatrix(rotation, invRot);
+  double transition[3] = { src[0], src[1], src[2] };
+  subtractM(measure, transition, tempM);
+  multiplyM(invRot, tempM, dest);
+}
+void inverseTransform(double measure[2][3], cspace src, double dest[2][3])
+{
+  double rotation[3][3];
+  double invRot[3][3];
+  double tempM[3];
+  rotationMatrix(src, rotation);
+  inverseMatrix(rotation, invRot);
+  double transition[3] = { src[0], src[1], src[2] };
+  subtractM(measure[0], transition, tempM);
+  multiplyM(invRot, tempM, dest[0]);
+  multiplyM(invRot, measure[1], dest[1]);
+}
+void inverseTransform(Eigen::Vector3d &src, cspace config, Eigen::Vector3d &dest)
+{
+    Eigen::Matrix3d rotationC;
+    rotationC << cos(config[5]), -sin(config[5]), 0,
+               sin(config[5]), cos(config[5]), 0,
+               0, 0, 1;
+    Eigen::Matrix3d rotationB;
+    rotationB << cos(config[4]), 0 , sin(config[4]),
+               0, 1, 0,
+               -sin(config[4]), 0, cos(config[4]);
+    Eigen::Matrix3d rotationA;
+    rotationA << 1, 0, 0 ,
+               0, cos(config[3]), -sin(config[3]),
+               0, sin(config[3]), cos(config[3]);
+    Eigen::Vector3d transitionV(config[0], config[1], config[2]);
+    Eigen::Matrix3d rotationM = rotationC * rotationB * rotationA;
+    dest = rotationM.inverse() * (src - transitionV);
+}
+
+void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, double euclDist[2])
+{
+    int num_mesh = int(mesh.size());
+    cout << "Num_Mesh " << num_mesh << endl;
+    euclDist[0] = 0;
+    euclDist[1] = 10000000;
+    double dist = 0;
+    Eigen::Vector3d meshPoint;
+    Eigen::Vector3d transMeanPoint;
+    Eigen::Vector3d transTruePoint;
+    for (int i = 0; i < num_mesh; i++) {
+        meshPoint << mesh[i][1][0], mesh[i][1][1], mesh[i][1][2];
+        Transform(meshPoint, meanConfig, transMeanPoint);
+        Transform(meshPoint, trueConfig, transTruePoint);
+        dist = (transMeanPoint - transTruePoint).norm();
+        if (dist > euclDist[0]) {
+            euclDist[0] = dist;
+        }
+        if (dist < euclDist[1]) {
+            euclDist[1] = dist;
+        }
+        meshPoint << mesh[i][2][0], mesh[i][2][1], mesh[i][2][2];
+        Transform(meshPoint, meanConfig, transMeanPoint);
+        Transform(meshPoint, trueConfig, transTruePoint);
+        dist = (transMeanPoint - transTruePoint).norm();
+        if (dist > euclDist[0]) {
+            euclDist[0] = dist;
+        }
+        if (dist < euclDist[1]) {
+            euclDist[1] = dist;
+        }
+        meshPoint << mesh[i][3][0], mesh[i][3][1], mesh[i][3][2];
+        Transform(meshPoint, meanConfig, transMeanPoint);
+        Transform(meshPoint, trueConfig, transTruePoint);
+        dist = (transMeanPoint - transTruePoint).norm();
+        if (dist > euclDist[0]) {
+            euclDist[0] = dist;
+        }
+        if (dist < euclDist[1]) {
+            euclDist[1] = dist;
+        }
+    }
+}
+
+/* 
+ * Check if the configuration falls into an empty bin
+ * Input: set: Set to store non-empty bins
+ *        config: Sampled particle
+ * Output: 1 if empty
+ *         0 if not, and then add the bin to set
+ */
+int checkEmptyBin(std::unordered_set<string> *set, cspace config)
+{
+  string s = "";
+  for (int i = 0; i < Node::cdim; i++) {
+    s += floor(config[i] / DISPLACE_INTERVAL);
+    s += ":";
+  }
+  if (set->find(s) == set->end()) {
+    set->insert(s);
+    return 1;
+  }
+  return 0;
+}

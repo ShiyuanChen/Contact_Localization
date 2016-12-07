@@ -17,35 +17,9 @@
 #include "matrix.h"
 #include "stlParser.h"
 #include "Node.h"
-
+#include "BayesNet.h"
 
 using namespace std;
-
-#define COMBINE_RAYCASTING
-#define ADAPTIVE_NUMBER
-#define ADAPTIVE_BANDWIDTH
-
-#define Pi          3.141592653589793238462643383279502884L
-
-#define SQ(x) ((x)*(x))
-#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
-#define max3(a,b,c) ((a>b?a:b)>c?(a>b?a:b):c)
-#define max2(a,b) (a>b?a:b)
-#define min3(a,b,c) ((a<b?a:b)<c?(a<b?a:b):c)
-#define min2(a,b) (a<b?a:b)
-typedef array<array<float, 3>, 4> vec4x3;
-#define epsilon 0.0001
-#define ARM_LENGTH 0.8
-#define N_MIN 50
-#define DISPLACE_INTERVAL 0.015
-#define SAMPLE_RATE 0.50
-#define MAX_ITERATION 100000
-#define COV_MULTIPLIER 5.0
-#define MIN_STD 1.0e-7
-#define BEAM_RADIUS 0.002
-#define BEAM_STEPSIZE 0.001
-#define NUM_POLY_ITERATIONS 20
-
 
 int total_time = 0;
 int converge_count = 0;
@@ -70,7 +44,8 @@ particleFilter::particleFilter(int n_particles, cspace b_init[2],
 {
   b_Xprior[0] = b_init[0];
   b_Xprior[1] = b_init[1];
-  root = new Node(numParticles, b_Xprior);
+  bayesNet.addRoot(numParticles, b_Xprior);
+  // root = new Node(numParticles, b_Xprior);
   // root->addDatum
   // particles.resize(numParticles);
   // particlesPrev.resize(numParticles);
@@ -99,10 +74,11 @@ Node* particleFilter::addDatum(std::vector<Node*> node, std::vector<double[3]> o
 
 Node* particleFilter::addInitialDatum()
 {
-	Parent *parent = new Parent(root, 0, 0);
-	std::vector<Parent *> p;
-	p.push_back(parent);
-	root->child.push_back(new Node(numParticles, p, 1));
+	// Parent *parent = new Parent(bayesNet.node[0], 0, 0);
+	// std::vector<Parent *> p;
+	// p.push_back(parent);
+	// bayesNet.node[0]->child.push_back(new Node(numParticles, p, 1));
+
 	// int n = node.size();
 	// for (int i = 0; i < n; i ++) {
 	// 	Node* nodeptr = node[i];
@@ -114,7 +90,8 @@ Node* particleFilter::addInitialDatum()
 
 void particleFilter::getAllParticles(Particles &particles_dest)
 {
-  root->child[0]->getAllParticles(particles_dest);
+  // bayesNet.node[0]->child[0]->getAllParticles(particles_dest);
+  bayesNet.getAllParticles(particles_dest, 0);
   // root->child[1]->child[0]->getPriorParticles(particles_dest, cdim);
 }
 
@@ -146,7 +123,7 @@ void particleFilter::getAllParticles(Particles &particles_dest)
  *        miss: if it is a miss touch
  * output: none
  */
-void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss)
+void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss, int datum)
 {
 	// cspace trueConfig = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
 	cspace trueConfig = {1.22, -0.025, 0, 0, 0, Pi};
@@ -155,8 +132,8 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
   std::random_device generator;
 
   // bool iffar = root->updateParticles(obs, mesh, dist_transform, Xstd_ob, R, miss);
-  bool iffar = root->child[1]->child[0]->update(obs, Xstd_ob, R);
-  cout << "SDSDDASDS" << endl;
+  // bool iffar = bayesNet.node[0]->child[1]->child[0]->update(obs, Xstd_ob, R);
+  bool iffar = bayesNet.updateFullJoint(obs, Xstd_ob, R, datum);
   auto timer_end = std::chrono::high_resolution_clock::now();
   auto timer_dur = timer_end - timer_begin;
 
@@ -224,7 +201,8 @@ void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
 // 	cout << x_est_stat[k] << "  ";
 //   }
 //   cout << endl;
-	root->child[1]->child[0]->estimateGaussian(x_mean, x_est_stat);
+	// bayesNet.node[0]->child[1]->child[0]->estimateGaussian(x_mean, x_est_stat);
+  bayesNet.estimateGaussian(x_mean, x_est_stat, 0);
 }
 
 
@@ -401,7 +379,7 @@ void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
 // 			D -= R;
 // #else
 // 			if (checkInObject(mesh, cur_inv_M[0]) == 1 && D != 0) {
-// 			  // if (gradient.dot(touch_dir) <= epsilon)
+// 			  // if (gradient.dot(touch_dir) <= EPSILON)
 // 			  // 	continue;
 // 			  D = -D - R;
 // 			}
@@ -409,7 +387,7 @@ void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
 // 			  D = - R;
 // 			}
 // 			else {
-// 			  // if (gradient.dot(touch_dir) >= -epsilon)
+// 			  // if (gradient.dot(touch_dir) >= -EPSILON)
 // 			  // 	continue;
 // 			  D = D - R;
 // 			}
@@ -911,7 +889,7 @@ int checkObstacles(vector<vec4x3> &mesh, cspace config, double start[2][3], doub
 	{
 	  double inter_dist = normal_dir.dot(ray_length);
 	  //cout << "inter_dist: " << inter_dist << endl;
-	  if (inter_dist >= dist - epsilon && inter_dist <= dist + epsilon)
+	  if (inter_dist >= dist - EPSILON && inter_dist <= dist + EPSILON)
 			return 0;
 	}
 		
@@ -969,7 +947,7 @@ int checkIntersections(vector<vec4x3> &mesh, double voxel_center[3], double dir[
 	if (tMax > 0 && countIntRod % 2 == 1) {
 	  ray_length << tMax * dir[0], tMax * dir[1], tMax * dir[2];
 	  double inter_dist = normal_dir.dot(ray_length);
-	  if (inter_dist >= dist - epsilon && inter_dist <= dist + epsilon)
+	  if (inter_dist >= dist - EPSILON && inter_dist <= dist + EPSILON)
 			return 0;
 	}
 	return 1;
@@ -1019,126 +997,8 @@ void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, do
         }
     }
 }
-void transFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
-	Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
-	Eigen::Matrix3d rotationC, rotationB, rotationA;
-  rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
-             sin(baseConfig[5]), cos(baseConfig[5]), 0,
-             0, 0, 1;
-  rotationB << cos(baseConfig[4]), 0 , sin(baseConfig[4]),
-             0, 1, 0,
-             -sin(baseConfig[4]), 0, cos(baseConfig[4]);
-  rotationA << 1, 0, 0 ,
-             0, cos(baseConfig[3]), -sin(baseConfig[3]),
-             0, sin(baseConfig[3]), cos(baseConfig[3]);
-  Eigen::Matrix3d rotation = rotationC * rotationB * rotationA;
-  baseTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), baseConfig[0],
-  						 rotation(1, 0), rotation(1, 1), rotation(1, 2), baseConfig[1],
-  						 rotation(2, 0), rotation(2, 1), rotation(2, 2), baseConfig[2],
-  						 0,              0,              0,              1;
-  rotationC << cos(relativeConfig[5]), -sin(relativeConfig[5]), 0,
-             sin(relativeConfig[5]), cos(relativeConfig[5]), 0,
-             0, 0, 1;
-  rotationB << cos(relativeConfig[4]), 0 , sin(relativeConfig[4]),
-             0, 1, 0,
-             -sin(relativeConfig[4]), 0, cos(relativeConfig[4]);
-  rotationA << 1, 0, 0 ,
-             0, cos(relativeConfig[3]), -sin(relativeConfig[3]),
-             0, sin(relativeConfig[3]), cos(relativeConfig[3]);
-  rotation = rotationC * rotationB * rotationA;
-  relativeTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), relativeConfig[0],
-  						     rotation(1, 0), rotation(1, 1), rotation(1, 2), relativeConfig[1],
-  						     rotation(2, 0), rotation(2, 1), rotation(2, 2), relativeConfig[2],
-  						     0,              0,              0,              1;
-  absoluteTrans = baseTrans * relativeTrans;
-  absoluteConfig[0] = absoluteTrans(0,3);
-  absoluteConfig[1] = absoluteTrans(1,3);
-  absoluteConfig[2] = absoluteTrans(2,3);
-  absoluteConfig[3] = atan2(absoluteTrans(2,1), absoluteTrans(2,2));
-  absoluteConfig[4] = atan2(-absoluteTrans(2,0), sqrt(SQ(absoluteTrans(2,1)) + SQ(absoluteTrans(2,2))));
-  absoluteConfig[5] = atan2(absoluteTrans(1,0), absoluteTrans(0,0));
-  // cout << absoluteTrans << endl;
-}
-
-void invTransFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
-	Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
-	Eigen::Matrix3d rotationC, rotationB, rotationA;
-  rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
-             sin(baseConfig[5]), cos(baseConfig[5]), 0,
-             0, 0, 1;
-  rotationB << cos(baseConfig[4]), 0 , sin(baseConfig[4]),
-             0, 1, 0,
-             -sin(baseConfig[4]), 0, cos(baseConfig[4]);
-  rotationA << 1, 0, 0 ,
-             0, cos(baseConfig[3]), -sin(baseConfig[3]),
-             0, sin(baseConfig[3]), cos(baseConfig[3]);
-  Eigen::Matrix3d rotation = rotationC * rotationB * rotationA;
-  baseTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), baseConfig[0],
-  						 rotation(1, 0), rotation(1, 1), rotation(1, 2), baseConfig[1],
-  						 rotation(2, 0), rotation(2, 1), rotation(2, 2), baseConfig[2],
-  						 0,              0,              0,              1;
-  baseTrans = baseTrans.inverse().eval();
-  rotationC << cos(relativeConfig[5]), -sin(relativeConfig[5]), 0,
-             sin(relativeConfig[5]), cos(relativeConfig[5]), 0,
-             0, 0, 1;
-  rotationB << cos(relativeConfig[4]), 0 , sin(relativeConfig[4]),
-             0, 1, 0,
-             -sin(relativeConfig[4]), 0, cos(relativeConfig[4]);
-  rotationA << 1, 0, 0 ,
-             0, cos(relativeConfig[3]), -sin(relativeConfig[3]),
-             0, sin(relativeConfig[3]), cos(relativeConfig[3]);
-  rotation = rotationC * rotationB * rotationA;
-  relativeTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), relativeConfig[0],
-  						     rotation(1, 0), rotation(1, 1), rotation(1, 2), relativeConfig[1],
-  						     rotation(2, 0), rotation(2, 1), rotation(2, 2), relativeConfig[2],
-  						     0,              0,              0,              1;
-  absoluteTrans = baseTrans * relativeTrans;
-  absoluteConfig[0] = absoluteTrans(0,3);
-  absoluteConfig[1] = absoluteTrans(1,3);
-  absoluteConfig[2] = absoluteTrans(2,3);
-  absoluteConfig[3] = atan2(absoluteTrans(2,1), absoluteTrans(2,2));
-  absoluteConfig[4] = atan2(-absoluteTrans(2,0), sqrt(SQ(absoluteTrans(2,1)) + SQ(absoluteTrans(2,2))));
-  absoluteConfig[5] = atan2(absoluteTrans(1,0), absoluteTrans(0,0));
-  // cout << absoluteTrans << endl;
-}
-
-
-void transPointConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
-	Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
-	Eigen::Matrix3d rotationC, rotationB, rotationA;
-  rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
-             sin(baseConfig[5]), cos(baseConfig[5]), 0,
-             0, 0, 1;
-  rotationB << cos(baseConfig[4]), 0 , sin(baseConfig[4]),
-             0, 1, 0,
-             -sin(baseConfig[4]), 0, cos(baseConfig[4]);
-  rotationA << 1, 0, 0 ,
-             0, cos(baseConfig[3]), -sin(baseConfig[3]),
-             0, sin(baseConfig[3]), cos(baseConfig[3]);
-  Eigen::Matrix3d rotation = rotationC * rotationB * rotationA;
-  baseTrans << rotation(0, 0), rotation(0, 1), rotation(0, 2), baseConfig[0],
-  						 rotation(1, 0), rotation(1, 1), rotation(1, 2), baseConfig[1],
-  						 rotation(2, 0), rotation(2, 1), rotation(2, 2), baseConfig[2],
-  						 0,              0,              0,              1;
-  Eigen::Vector4d endPoint1, endPoint2;
-  endPoint1 << relativeConfig[0], relativeConfig[1], relativeConfig[2], 1;
-  endPoint2 << relativeConfig[3], relativeConfig[4], relativeConfig[5], 1;
-  endPoint1 = baseTrans * endPoint1;
-  endPoint2 = baseTrans * endPoint2;
-  absoluteConfig[0] = endPoint1(0);
-  absoluteConfig[1] = endPoint1(1);
-  absoluteConfig[2] = endPoint1(2);
-  absoluteConfig[3] = endPoint2(0);
-  absoluteConfig[4] = endPoint2(1);
-  absoluteConfig[5] = endPoint2(2);
-}
 
 int particleFilter::getNumParticles() {
-	return root->child[0]->numParticles;
+	return bayesNet.numParticles;
 }
 
-void copyParticles(cspace config, fullCspace &fullConfig, int idx) {
-  for (int i = 0; i < particleFilter::cdim; i ++) {
-    fullConfig[idx + i] = config[i];
-  }
-}
