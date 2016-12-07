@@ -12,7 +12,7 @@ using namespace std;
 class BayesNet {
 public:
   static const int cdim = 6;
-  static const int fulldim = 30;
+  static const int fulldim = FULLDIM;
   int numParticles; // number of particles
   int maxNumParticles;
 

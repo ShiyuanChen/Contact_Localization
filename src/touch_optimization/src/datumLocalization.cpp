@@ -176,7 +176,7 @@ void randomSelection(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_start, 
  * Randomly chooses vectors, gets the Information Gain for each of 
  *  those vectors, and returns the ray (start and end) with the highest information gain
  */
-void fixedSelectionPlane(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_start, tf::Point &best_end)
+void fixedSelectionFrontPlane(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_start, tf::Point &best_end)
 {
   int index;
   double bestIG = 0;
@@ -275,6 +275,83 @@ void fixedSelectionEdge(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_star
 //   return intersectionExists;
 // }
 
+/**
+ * Randomly chooses vectors, gets the Information Gain for each of 
+ *  those vectors, and returns the ray (start and end) with the highest information gain
+ */
+int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_start, tf::Point &best_end)
+{
+  int index;
+  double bestIG = 0;
+  tf::Point tf_start;
+  tf::Point tf_end;
+  tf::Point ig_start;
+  tf::Point ig_end;
+  bestIG = 0;
+  std::random_device rd;
+  std::uniform_real_distribution<double> rand(0, 1);
+  std::uniform_int_distribution<> int_rand(0, 5);
+  Eigen::Vector3d start;
+  Eigen::Vector3d end;
+  
+  int datum = 0;
+  int bestDatum = 0;
+  for(int i=0; i<100; i++){
+    index = int_rand(rd);
+    if (index == 0)
+    {
+      double x = rand(rd) * 0.9 + 0.1;
+      double z = rand(rd) * 0.18 + 0.03;
+      start << x, 1, z;
+      end << x, -1, z;
+      datum = 1;
+      ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
+      ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
+    } else if (index == 1)
+    {
+      double y = rand(rd) * 0.035 - 0.06;
+      double z = rand(rd) * 0.18 + 0.03;
+      start << -1, y, z;
+      end << 1, y, z;
+      datum = 5;
+      ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
+      ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
+    } else {
+      double x = rand(rd) * 0.9 + 0.1;
+      start << x, 1, 0.228;
+      end << x, -1, 0.228;
+      datum = 4;
+      ig_start.setValue(start(0, 0), -0.01, 1);
+      ig_end.setValue(end(0, 0), -0.01, -1);
+    }
+    
+    tf_start.setValue(start(0, 0), start(1, 0), start(2, 0));
+    tf_end.setValue(end(0, 0), end(1, 0), end(2, 0));
+    Ray measurement(ig_start, ig_end);
+    // auto timer_begin = std::chrono::high_resolution_clock::now();
+    double IG = rayt.getIG(measurement, 0.01, 0.002);
+    // plt.plotRay(measurement);
+    // plt.labelRay(measurement, IG);
+    // auto timer_end = std::chrono::high_resolution_clock::now();
+    // auto timer_dur = timer_end - timer_begin;
+    // cout << "IG: " << IG << endl;
+    // cout << "Elapsed time for ray: " << std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count() << endl;
+    // double IG = plt.getIG(start, end, 0.01, 0.002);
+    if (IG > bestIG){
+      bestIG = IG;
+      best_start = tf_start;
+      best_end = tf_end;
+      bestDatum = datum;
+    }
+  }
+  // plt.plotCylinder(best_start, best_end, 0.01, 0.002, true);
+  ROS_INFO("Ray is: %f, %f, %f.  %f, %f, %f", 
+     best_start.getX(), best_start.getY(), best_start.getZ(),
+     best_end.getX(), best_end.getY(), best_end.getZ());
+  plt.plotRay(Ray(best_start, best_end));
+  return bestDatum;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -304,62 +381,13 @@ int main(int argc, char **argv)
 
   int i = 0;
   //for(int i=0; i<20; i++){
-  while (i < 3) {
+  while (i < 10) {
     ros::Duration(2).sleep();
     //tf::Point start(0.95,0,-0.15);
     //tf::Point end(0.95,2,-0.15);
     tf::Point start, end;
     // randomSelection(plt, rayt, start, end);
-    fixedSelectionEdge(plt, rayt, start, end);
-
-    Ray measurement(start, end);
-    
-    // double distToPart = 1.025;
-    double distToPart = 1;
-    // if(!rayt.traceRay(measurement, distToPart)){
-    //   ROS_INFO("NO INTERSECTION, Skipping");
-    //   continue;
-    // }
-    tf::Point intersection(start.getX(), start.getY(), start.getZ());
-    intersection = intersection + (end-start).normalize() * (distToPart - radius);
-  std::cout << "Intersection at: " << intersection.getX() << "  " << intersection.getY() << "   " << intersection.getZ() << std::endl;
-    tf::Point ray_dir(end.x()-start.x(),end.y()-start.y(),end.z()-start.z());
-    ray_dir = ray_dir.normalize();
-    obs.x=intersection.getX() + randn(rd); 
-    obs.y=intersection.getY() + randn(rd); 
-    obs.z=intersection.getZ() + randn(rd);
-    dir.x=ray_dir.x();
-    dir.y=ray_dir.y();
-    dir.z=ray_dir.z();
-    
-    plt.plotRay(Ray(start, end));
-    // ros::Duration(1).sleep();
-
-    particle_filter::AddObservation pfilter_obs;
-    pfilter_obs.request.p = obs;
-    pfilter_obs.request.dir = dir;
-    pfilter_obs.request.datum = 4;
-    if(!srv_add.call(pfilter_obs)){
-      ROS_INFO("Failed to call add observation");
-    }
-
-    ros::spinOnce();
-    while(!rayt.particleHandler.newParticles){
-      ROS_INFO_THROTTLE(10, "Waiting for new particles...");
-      ros::spinOnce();
-      ros::Duration(.1).sleep();
-    }
-    i ++;
-  }
-  i = 0;
-  //for(int i=0; i<20; i++){
-  while (i < 3) {
-    ros::Duration(2).sleep();
-    //tf::Point start(0.95,0,-0.15);
-    //tf::Point end(0.95,2,-0.15);
-    tf::Point start, end;
-    // randomSelection(plt, rayt, start, end);
-    fixedSelectionPlane(plt, rayt, start, end);
+    int datum = randomSelectionDatum(plt, rayt, start, end);
 
     Ray measurement(start, end);
     
@@ -387,7 +415,7 @@ int main(int argc, char **argv)
     particle_filter::AddObservation pfilter_obs;
     pfilter_obs.request.p = obs;
     pfilter_obs.request.dir = dir;
-    pfilter_obs.request.datum = 1;
+    pfilter_obs.request.datum = datum;
     if(!srv_add.call(pfilter_obs)){
       ROS_INFO("Failed to call add observation");
     }

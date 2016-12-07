@@ -58,7 +58,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
 
     // Front Plane
     cspace relativeConfig, baseConfig, transformedConfig, edgeConfig;
-    cspace frontPlaneConfig, sidePlaneConfig;
+    cspace frontPlaneConfig, sidePlaneConfig, otherSidePlaneConfig;
     relativeConfig[0] = 1.22;
     relativeConfig[1] = -0.025;
     relativeConfig[2] = 0;
@@ -118,7 +118,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     fullJointPrev[i][28] = pb(1);
     fullJointPrev[i][29] = pb(2);
 
-    // side Plane
+    // Side Plane
     relativeConfig[0] = 0;
     relativeConfig[1] = 0;
     relativeConfig[2] = 0;
@@ -127,8 +127,20 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     relativeConfig[5] = -Pi / 2.0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, sidePlaneConfig);
-
     copyParticles(sidePlaneConfig, fullJointPrev[i], 5 * cdim);
+
+    // Other Side Plane
+    relativeConfig[0] = 1.22 + dist(rd) * 0.001;;
+    relativeConfig[1] = 0;
+    relativeConfig[2] = 0;
+    relativeConfig[3] = 0;
+    relativeConfig[4] = 0;
+    relativeConfig[5] = Pi / 2.0;
+    baseConfig = tmpConfig;
+    transFrameConfig(baseConfig, relativeConfig, otherSidePlaneConfig);
+    copyParticles(otherSidePlaneConfig, fullJointPrev[i], 6 * cdim);
+    // Hole 
+
 
   }
   fullJoint = fullJointPrev;
@@ -161,8 +173,8 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int
   double D;
   double cur_inv_M[2][3];
   
-  double unsigned_dist_check = R + 2 * Xstd_ob;
-  double signed_dist_check = 2 * Xstd_ob;
+  double unsigned_dist_check = R + 1 * Xstd_ob;
+  double signed_dist_check = 1 * Xstd_ob;
 
   //Eigen::Vector3d gradient;
   Eigen::Vector3d touch_dir;
@@ -183,7 +195,7 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int
   }
   Eigen::VectorXd samples(fulldim, 1);
   Eigen::VectorXd rot_sample(fulldim, 1);
-  if (nodeidx == 1) { // Plane
+  if (nodeidx == 1 || nodeidx == 5) { // Plane
     cout << "Start updating Plane!" << endl;
     while (i < numParticles && i < maxNumParticles) {
       idx = int(floor(distribution(rd)));
@@ -328,9 +340,6 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int
 void BayesNet::getAllParticles(Particles &particles_dest, int idx)
 {
   particles_dest.resize(numParticles);
-      cout << "start get Particles" << endl;
-      cout << "Current number of Particles: " << numParticles << endl;
-      cout << "particle size: " << fullJoint.size() << endl;
   for (int j = 0; j < numParticles; j++) {
     for (int k = 0; k < cdim; k++) {
       particles_dest[j][k] = fullJoint[j][k + idx * cdim];

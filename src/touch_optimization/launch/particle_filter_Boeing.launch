@@ -8,6 +8,10 @@
 
   <param name="localization_object_cad" type="str" 
 	 value="package://custom_ray_trace/sdf/$(arg localization_object).stl"/>
+  <param name="localization_frontdatum_cad" type="str" 
+   value="package://custom_ray_trace/sdf/plane.stl"/>
+
+
   <param name="localization_object_filepath" type="str"
 	 value="$(find custom_ray_trace)/sdf/$(arg localization_object).stl"/>
   <param name="localization_object" type="str"
