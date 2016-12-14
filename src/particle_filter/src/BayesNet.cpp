@@ -130,7 +130,8 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     copyParticles(sidePlaneConfig, fullJointPrev[i], 5 * cdim);
 
     // Other Side Plane
-    relativeConfig[0] = 1.22 + dist(rd) * 0.001;;
+    // relativeConfig[0] = 1.22 + dist(rd) * 0.0005;
+    relativeConfig[0] = 1.2192;
     relativeConfig[1] = 0;
     relativeConfig[2] = 0;
     relativeConfig[3] = 0;
@@ -195,7 +196,7 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int
   }
   Eigen::VectorXd samples(fulldim, 1);
   Eigen::VectorXd rot_sample(fulldim, 1);
-  if (nodeidx == 1 || nodeidx == 5) { // Plane
+  if (nodeidx == 1 || nodeidx == 5 || nodeidx == 6) { // Plane
     cout << "Start updating Plane!" << endl;
     while (i < numParticles && i < maxNumParticles) {
       idx = int(floor(distribution(rd)));

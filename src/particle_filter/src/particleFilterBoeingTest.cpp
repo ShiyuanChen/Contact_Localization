@@ -76,12 +76,12 @@ void computeInitialDistribution(cspace binit[2], ros::NodeHandle n)
   }
 
 
-  binit[0][0] = pFrame[0] + 0.02;
-  binit[0][1] = pFrame[1] - 0.01;
-  binit[0][2] = pFrame[2] + 0.02;
-  binit[0][3] = pFrame[3] - 0.04;
-  binit[0][4] = pFrame[4] + 0.05;
-  binit[0][5] = pFrame[5] - 0.01;
+  binit[0][0] = pFrame[0];
+  binit[0][1] = pFrame[1];
+  binit[0][2] = pFrame[2];
+  binit[0][3] = pFrame[3];
+  binit[0][4] = pFrame[4];
+  binit[0][5] = pFrame[5];
 
   binit[1][0] = uncertainties[0];
   binit[1][1] = uncertainties[1];
@@ -267,7 +267,7 @@ void visualize()
 #endif
 
 PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
-  pFilter_(n_particles, b_init, 0.0005, 0.001),
+  pFilter_(n_particles, b_init, 0.0005, 0.000),
   num_voxels{200, 200, 200}//,
   // pFilter_(n_particles, b_init, 0.001, 0.0025, 0.0001, 0.00),
   // num_voxels{300, 300, 300}//,

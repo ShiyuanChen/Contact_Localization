@@ -298,8 +298,7 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
   int bestDatum = 0;
   for(int i=0; i<100; i++){
     index = int_rand(rd);
-    if (index == 0)
-    {
+    if (index == 0) {
       double x = rand(rd) * 0.9 + 0.1;
       double z = rand(rd) * 0.18 + 0.03;
       start << x, 1, z;
@@ -307,13 +306,20 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
       datum = 1;
       ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
       ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
-    } else if (index == 1)
-    {
+    // } else if (index == 1) {
+    //   double y = rand(rd) * 0.035 - 0.06;
+    //   double z = rand(rd) * 0.18 + 0.03;
+    //   start << -1, y, z;
+    //   end << 1, y, z;
+    //   datum = 5;
+    //   ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
+    //   ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
+    } else if (index == 2) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.18 + 0.03;
-      start << -1, y, z;
+      start << 2, y, z;
       end << 1, y, z;
-      datum = 5;
+      datum = 6;
       ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
       ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     } else {
@@ -361,7 +367,7 @@ int main(int argc, char **argv)
   RayTracer rayt;
 
   std::random_device rd;
-  std::normal_distribution<double> randn(0.0,0.0001);
+  std::normal_distribution<double> randn(0.0,0.00000001);
 
   ROS_INFO("Running...");
 

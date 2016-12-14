@@ -202,7 +202,7 @@ void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
 //   }
 //   cout << endl;
 	// bayesNet.node[0]->child[1]->child[0]->estimateGaussian(x_mean, x_est_stat);
-  bayesNet.estimateGaussian(x_mean, x_est_stat, 0);
+  bayesNet.estimateGaussian(x_mean, x_est_stat, 6);
 }
 
 
