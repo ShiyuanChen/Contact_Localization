@@ -130,7 +130,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     copyParticles(sidePlaneConfig, fullJointPrev[i], 5 * cdim);
 
     // Other Side Plane
-    relativeConfig[0] = 1.24 + dist(rd) * 0.03;
+    relativeConfig[0] = 1.24 + dist(rd) * 0.003;
     // relativeConfig[0] = 1.2192;
     relativeConfig[1] = 0;
     relativeConfig[2] = 0;

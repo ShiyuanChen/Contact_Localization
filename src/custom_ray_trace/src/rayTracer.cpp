@@ -43,6 +43,10 @@ Ray Ray::getTransformed(tf::Transform trans) const
 
 ParticleHandler::ParticleHandler()
 {
+  std::string cadName;
+  if(!rosnode.getParam("localization_object", cadName)){
+    ROS_INFO("Failed to get param: localization_object");
+  }
   particlesInitialized = false;
   newParticles = true;
   tf_listener_.waitForTransform("/my_frame", "/true_frame", ros::Time(0), ros::Duration(10.0));
