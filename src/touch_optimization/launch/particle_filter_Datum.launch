@@ -1,0 +1,67 @@
+<launch>
+
+<!-- This is used to load the cad files for visualization and ray tracing.  -->
+<!-- There needs to be corresponding files  -->
+<!-- gazebo_ray_trace/sdf/[localization_object_cad].stl -->
+<!-- gazebo_ray_trace/worlds/[localization_object_cad].world -->
+  <arg name="localization_object" default="wood_boeing"/>
+  <param name="localization_object" type="str" value="$(arg localization_object)"/>
+  
+  <node pkg="rviz" type="rviz" name="ParticleViz" 
+   args="-d $(find using_markers)/src/rviz_config.rviz" required="true"/>
+
+  <rosparam command="load" file="$(find touch_optimization)/configs/datum.yaml"/>
+
+  <param name="localization_object_cad" type="str" 
+	 value="package://custom_ray_trace/sdf/$(arg localization_object).stl"/>
+
+  <param name="localization_object_filepath" type="str"
+	 value="$(find custom_ray_trace)/sdf/$(arg localization_object).stl"/>
+  <param name="localization_object" type="str"
+	 value="$(arg localization_object)"/>
+
+  <rosparam param="initial_uncertainties">
+    [0.02, 0.03, 0.02, 0.02, 0.02, 0.02]
+    <!-- [.05, .05, .05, 0,0,0] -->
+  </rosparam>
+
+  <rosparam param="particle_frame">
+    <!-- [0.3, 0.3, 0.3, 0.5, 0.7, 0.5]-->
+    [0.01, 0, 0, 0, 0, 0]
+  </rosparam>
+  
+  <rosparam param="true_frame">
+    [0, 0, 0, 0, 0, 0]
+  </rosparam>
+
+  <include file="$(find touch_optimization)/launch/piece.launch">
+    <arg name="pieceName" value="$(arg localization_object)"/>
+  </include>
+
+  <include file="$(find touch_optimization)/launch/piece.launch"> 
+    <arg name="pieceName" value="right_datum"/> 
+  </include>
+
+  <include file="$(find touch_optimization)/launch/piece.launch"> 
+    <arg name="pieceName" value="left_datum"/> 
+  </include>
+
+  <include file="$(find touch_optimization)/launch/piece.launch"> 
+    <arg name="pieceName" value="top_datum"/> 
+  </include>
+
+  <include file="$(find touch_optimization)/launch/piece.launch"> 
+    <arg name="pieceName" value="front_datum"/> 
+  </include>
+
+  <include file="$(find particle_filter)/launch/pfilterBoeing.launch"/>
+
+<!-- Gazebo ray tracing service used to calculate values of a touch -->
+  <!-- <include file="$(find gazebo_ray_trace)/launch/headless_ray_tracing_service.launch"> -->
+  <!--   <arg name="world_name"  -->
+  <!--   value="$(find gazebo_ray_trace)/worlds/$(arg localization_object).world"/> -->
+  <!-- </include> -->
+
+
+
+</launch>

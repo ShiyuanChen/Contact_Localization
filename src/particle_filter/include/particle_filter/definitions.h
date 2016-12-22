@@ -6,7 +6,7 @@
 using namespace std;
 
 #define CDIM 6
-#define FULLDIM 42
+#define FULLDIM 48
 
 typedef array<array<float, 3>, 4> vec4x3;
 typedef std::array<double,CDIM> cspace; // configuration space of the particles

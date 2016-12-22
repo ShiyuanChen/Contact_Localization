@@ -95,6 +95,13 @@ void particleFilter::getAllParticles(Particles &particles_dest)
   // root->child[1]->child[0]->getPriorParticles(particles_dest, cdim);
 }
 
+void particleFilter::getAllParticles(Particles &particles_dest, int idx)
+{
+  // bayesNet.node[0]->child[0]->getAllParticles(particles_dest);
+  bayesNet.getAllParticles(particles_dest, idx);
+  // root->child[1]->child[0]->getPriorParticles(particles_dest, cdim);
+}
+
 // /*
 //  * Create initial particles at start
 //  * Input: particles

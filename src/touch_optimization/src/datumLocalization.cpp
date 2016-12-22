@@ -290,7 +290,7 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
   bestIG = 0;
   std::random_device rd;
   std::uniform_real_distribution<double> rand(0, 1);
-  std::uniform_int_distribution<> int_rand(1, 2);
+  std::uniform_int_distribution<> int_rand(0, 4);
   Eigen::Vector3d start;
   Eigen::Vector3d end;
   

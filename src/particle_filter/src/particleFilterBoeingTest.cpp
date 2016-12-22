@@ -41,8 +41,13 @@ private:
   ros::Subscriber sub_request_particles;
   ros::ServiceServer srv_add_obs;
   ros::Publisher pub_particles;
+  // ros::Publisher pub_particles1;
+  // ros::Publisher pub_particles2;
+  std::vector<ros::Publisher> pub_particles_vec;
+  std::vector<int> datum_idx_vec;
   tf::StampedTransform trans_;
-  
+  tf::StampedTransform trans1_;
+  std::string cadName;
   distanceTransform *dist_transform;
   // ParticleHandler pHandler;
 
@@ -51,7 +56,7 @@ private:
 public:
   vector<vec4x3> mesh;
   int num_voxels[3];
-  geometry_msgs::PoseArray getParticlePoseArray();
+  geometry_msgs::PoseArray getParticlePoseArray(int idx);
   particleFilter pFilter_;
   PFilterTest(int n_particles, cspace b_init[2]);
   // void addObs(geometry_msgs::Point obs);
@@ -130,7 +135,13 @@ tf::Pose poseAt(cspace particle_pose)
 
 void PFilterTest::sendParticles(std_msgs::Empty emptyMsg)
 {
-  pub_particles.publish(getParticlePoseArray());
+  pub_particles.publish(getParticlePoseArray(0));
+  int size = pub_particles_vec.size();
+  for (int i = 0; i < size; i ++) {
+    pub_particles_vec[i].publish(getParticlePoseArray(datum_idx_vec[i]));
+  }
+  // pub_particles1.publish(getParticlePoseArray(5));
+  // pub_particles2.publish(getParticlePoseArray(6));
 }
 
 bool PFilterTest::addObs(particle_filter::AddObservation::Request &req,
@@ -148,7 +159,13 @@ bool PFilterTest::addObs(particle_filter::AddObservation::Request &req,
   pFilter_.addObservation(obs2, mesh, dist_transform, 0, datum);
 
   ROS_INFO("...Done adding observation");
-  pub_particles.publish(getParticlePoseArray());
+  pub_particles.publish(getParticlePoseArray(0));
+  int size = pub_particles_vec.size();
+  for (int i = 0; i < size; i ++) {
+    pub_particles_vec[i].publish(getParticlePoseArray(datum_idx_vec[i]));
+  }
+  // pub_particles1.publish(getParticlePoseArray(5));
+  // pub_particles2.publish(getParticlePoseArray(6));
   return true;
 }
 
@@ -174,12 +191,13 @@ bool PFilterTest::getMesh(std::string filename){
 
 
 
-geometry_msgs::PoseArray PFilterTest::getParticlePoseArray()
+geometry_msgs::PoseArray PFilterTest::getParticlePoseArray(int idx)
 {
   std::vector<cspace> particles;
-  pFilter_.getAllParticles(particles);
+  pFilter_.getAllParticles(particles, idx);
   // tf::Transform trans = pHandler.getTransformToPartFrame();
   tf::Transform trans = trans_;
+  if (idx == 5) trans = trans1_;
 
   #ifdef POINT_CLOUD
   boost::mutex::scoped_lock updateLock(updateModelMutex);	
@@ -205,9 +223,9 @@ geometry_msgs::PoseArray PFilterTest::getParticlePoseArray()
   updateLock.unlock();
   #endif
 
-  cspace particles_est_stat;
-  cspace particles_est;
-  pFilter_.estimateGaussian(particles_est, particles_est_stat);
+  // cspace particles_est_stat;
+  // cspace particles_est;
+  // pFilter_.estimateGaussian(particles_est, particles_est_stat);
   geometry_msgs::PoseArray poseArray;
   for(int i=0; i<50; i++){
     tf::Pose pose = poseAt(particles[i]);
@@ -281,11 +299,25 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
 
 
 {
-  
+  if(!n.getParam("localization_object", cadName)){
+    ROS_INFO("Failed to get param: localization_object");
+  }
   // sub_init = n.subscribe("/particle_filter_init", 1, &PFilterTest::initDistribution, this);
   sub_request_particles = n.subscribe("/request_particles", 1, &PFilterTest::sendParticles, this);
   srv_add_obs = n.advertiseService("/particle_filter_add", &PFilterTest::addObs, this);
-  pub_particles = n.advertise<geometry_msgs::PoseArray>("/particles_from_filter", 5);
+  pub_particles = n.advertise<geometry_msgs::PoseArray>("/wood_boeing/particles_from_filter", 5);
+  // pub_particles1 = n.advertise<geometry_msgs::PoseArray>("/right_datum/particles_from_filter", 5);
+  // pub_particles2 = n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5);
+
+  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/right_datum/particles_from_filter", 5));
+  datum_idx_vec.push_back(5);
+  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5));
+  datum_idx_vec.push_back(6);
+  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/front_datum/particles_from_filter", 5));
+  datum_idx_vec.push_back(1);
+  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/top_datum/particles_from_filter", 5));
+  datum_idx_vec.push_back(7);
+
   ROS_INFO("Loading Boeing Particle Filter");
   // getMesh("boeing_part.stl");
   getMesh("wood_boeing.stl");
@@ -295,14 +327,17 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
   ROS_INFO("start create dist_transform");
   dist_transform = new distanceTransform(num_voxels);
 
-  tf::TransformListener tf_listener_;
-  tf_listener_.waitForTransform("/my_frame", "/particle_frame", ros::Time(0), ros::Duration(10.0));
-  tf_listener_.lookupTransform("/particle_frame", "/my_frame", ros::Time(0), trans_);
 
+  tf::TransformListener tf_listener_;
+  tf_listener_.waitForTransform("/my_frame", "wood_boeing", ros::Time(0), ros::Duration(10.0));
+  tf_listener_.lookupTransform("wood_boeing", "/my_frame", ros::Time(0), trans_);
+  tf_listener_.waitForTransform("/my_frame", "right_datum", ros::Time(0), ros::Duration(10.0));
+  tf_listener_.lookupTransform("right_datum", "/my_frame", ros::Time(0), trans1_);
+  ROS_INFO("finish create dist_transform");
 
   #ifdef POINT_CLOUD
   std::vector<cspace> particles;
-  pFilter_.getAllParticles(particles);
+  pFilter_.getAllParticles(particles, 0);
   boost::mutex::scoped_lock updateLock(updateModelMutex);	
   basic_cloud_ptr1->points.clear();
   basic_cloud_ptr2->points.clear();
@@ -325,7 +360,13 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
   updateLock.unlock();
   #endif
   ros::Duration(1.0).sleep();
-  pub_particles.publish(getParticlePoseArray());
+  pub_particles.publish(getParticlePoseArray(0));
+  int size = pub_particles_vec.size();
+  for (int i = 0; i < size; i ++) {
+    pub_particles_vec[i].publish(getParticlePoseArray(datum_idx_vec[i]));
+  }
+  // pub_particles1.publish(getParticlePoseArray(5));
+  // pub_particles2.publish(getParticlePoseArray(6));
 }
 
 
