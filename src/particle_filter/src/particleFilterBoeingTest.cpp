@@ -315,8 +315,8 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
   datum_idx_vec.push_back(6);
   pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/front_datum/particles_from_filter", 5));
   datum_idx_vec.push_back(1);
-  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/top_datum/particles_from_filter", 5));
-  datum_idx_vec.push_back(7);
+  // pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/top_datum/particles_from_filter", 5));
+  // datum_idx_vec.push_back(7);
 
   ROS_INFO("Loading Boeing Particle Filter");
   // getMesh("boeing_part.stl");

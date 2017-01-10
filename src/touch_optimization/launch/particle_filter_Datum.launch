@@ -21,7 +21,7 @@
 	 value="$(arg localization_object)"/>
 
   <rosparam param="initial_uncertainties">
-    [0.02, 0.03, 0.02, 0.02, 0.02, 0.02]
+    [0.02, 0.03, 0.02, 0.00002, 0.00002, 0.00002]
     <!-- [.05, .05, .05, 0,0,0] -->
   </rosparam>
 

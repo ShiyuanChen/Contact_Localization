@@ -59,12 +59,18 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     // Front Plane
     cspace relativeConfig, baseConfig, transformedConfig, edgeConfig;
     cspace frontPlaneConfig, rightPlaneConfig, leftPlaneConfig, topPlaneConfig;
-    relativeConfig[0] = 1.2192 + dist(rd) * 0.001;
+    // relativeConfig[0] = 1.2192 + dist(rd) * 0.001;
+    // relativeConfig[1] = -0.025 + dist(rd) * 0.001;
+    // relativeConfig[2] = 0.014 + dist(rd) * 0.001;
+    // relativeConfig[3] = 0 + dist(rd) * 0.01;
+    // relativeConfig[4] = 0 + dist(rd) * 0.01;
+    // relativeConfig[5] = Pi + dist(rd) * 0.01;
+    relativeConfig[0] = 1.2192;
     relativeConfig[1] = -0.025 + dist(rd) * 0.001;
-    relativeConfig[2] = 0.014 + dist(rd) * 0.001;
-    relativeConfig[3] = 0 + dist(rd) * 0.01;
-    relativeConfig[4] = 0 + dist(rd) * 0.01;
-    relativeConfig[5] = Pi + dist(rd) * 0.01;
+    relativeConfig[2] = 0.014;
+    relativeConfig[3] = 0 + dist(rd) * 0.001;
+    relativeConfig[4] = 0;
+    relativeConfig[5] = Pi;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, frontPlaneConfig);
     //TEMP:
@@ -72,7 +78,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     copyParticles(frontPlaneConfig, fullJointPrev[i], cdim);
 
     // Bottom Edge
-    cspace prior1[2] = {{0,0,0,1.22,0,0},{0,0,0,0.001,0.001,0.001}};
+    cspace prior1[2] = {{0,0,0,1.22,0,0},{0,0,0,0.0005,0.0005,0.0005}};
     for (int j = 0; j < cdim; j++) {
       relativeConfig[j] = prior1[0][j] + prior1[1][j] * (dist(rd));
     }
@@ -81,7 +87,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     copyParticles(edgeConfig, fullJointPrev[i], 2 * cdim);
 
     // Side Edge
-    cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.001,0.001,0.001}};
+    cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0005,0.0005,0.0005}};
     for (int j = 0; j < cdim; j++) {
       relativeConfig[j] = prior2[0][j] + prior2[1][j] * (dist(rd));
     }
@@ -119,7 +125,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     fullJointPrev[i][29] = pb(2);
 
     // Right Plane
-    relativeConfig[0] = 0;
+    relativeConfig[0] = 0 + dist(rd) * 0.001;
     relativeConfig[1] = 0;
     relativeConfig[2] = 0;
     relativeConfig[3] = 0;
@@ -130,27 +136,27 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     copyParticles(rightPlaneConfig, fullJointPrev[i], 5 * cdim);
 
     // Left Plane
-    relativeConfig[0] = 1.24 + dist(rd) * 0.001;
+    relativeConfig[0] = 1.22 + dist(rd) * 0.01;
     // relativeConfig[0] = 1.2192;
-    relativeConfig[1] = 0 + dist(rd) * 0.001;
-    relativeConfig[2] = 0 + dist(rd) * 0.001;
-    relativeConfig[3] = 0 + dist(rd) * 0.01;
-    relativeConfig[4] = 0 + dist(rd) * 0.01;
-    relativeConfig[5] = Pi / 2.0 + dist(rd) * 0.01;
+    relativeConfig[1] = 0;
+    relativeConfig[2] = 0;
+    relativeConfig[3] = 0;
+    relativeConfig[4] = 0;
+    relativeConfig[5] = Pi / 2.0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
     copyParticles(leftPlaneConfig, fullJointPrev[i], 6 * cdim);
 
-    // Top Plane
-    relativeConfig[0] = 0 + dist(rd) * 0.001;
-    relativeConfig[1] = -0.063 + dist(rd) * 0.001;
-    relativeConfig[2] = 0.23 + dist(rd) * 0.001;
-    relativeConfig[3] = -1.570796 + dist(rd) * 0.01;
-    relativeConfig[4] = 0 + dist(rd) * 0.01;
-    relativeConfig[5] = 0 + dist(rd) * 0.01;
-    baseConfig = tmpConfig;
-    transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
-    copyParticles(topPlaneConfig, fullJointPrev[i], 7 * cdim);
+    // // Top Plane
+    // relativeConfig[0] = 0 + dist(rd) * 0.001;
+    // relativeConfig[1] = -0.063 + dist(rd) * 0.001;
+    // relativeConfig[2] = 0.23 + dist(rd) * 0.001;
+    // relativeConfig[3] = -1.570796 + dist(rd) * 0.01;
+    // relativeConfig[4] = 0 + dist(rd) * 0.01;
+    // relativeConfig[5] = 0 + dist(rd) * 0.01;
+    // baseConfig = tmpConfig;
+    // transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
+    // copyParticles(topPlaneConfig, fullJointPrev[i], 7 * cdim);
 
 
     // Hole 
