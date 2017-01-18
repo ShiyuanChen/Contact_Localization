@@ -27,7 +27,7 @@ left_datum:
   true_state: [1.2192, 0, 0, 0, 0, 1.570796]
 
 top_datum:
-  color: [0, 1, 0, 0.2]
+  color: [0.5, 0, 0.5, 0.2]
   initial_uncertainties: [0.01, 0.0001, 0.01, 0.0001, 0.0001, 0.0001]
   localization_object: top_datum
   # localization_object_cad: package://custom_ray_trace/sdf/top_datum.stl

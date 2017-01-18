@@ -49,9 +49,10 @@ private:
   tf::StampedTransform trans1_;
   std::string cadName;
   distanceTransform *dist_transform;
+  std::string stlFileDir;
   // ParticleHandler pHandler;
 
-  bool getMesh(std::string filename);
+  bool getMesh(std::string filename, vector<vec4x3> &datumMesh);
 
 public:
   vector<vec4x3> mesh;
@@ -150,11 +151,16 @@ bool PFilterTest::addObs(particle_filter::AddObservation::Request &req,
   geometry_msgs::Point obs = req.p;
   geometry_msgs::Point dir = req.dir;
   int datum = req.datum;
+  std::string meshFile = req.mesh_file;
   ROS_INFO("Current update datum: %d", datum);
-  ROS_INFO("Adding Observation...") ;
+  ROS_INFO_STREAM("Current update datum name: " << meshFile);
+  ROS_INFO("Adding Observation...");
   ROS_INFO("point: %f, %f, %f", obs.x, obs.y, obs.z);
   ROS_INFO("dir: %f, %f, %f", dir.x, dir.y, dir.z);
   double obs2[2][3] = {{obs.x, obs.y, obs.z}, {dir.x, dir.y, dir.z}};
+
+  vector<vec4x3> datumMesh;
+  getMesh(meshFile, datumMesh);
 
   pFilter_.addObservation(obs2, mesh, dist_transform, 0, datum);
 
@@ -170,21 +176,8 @@ bool PFilterTest::addObs(particle_filter::AddObservation::Request &req,
 }
 
 
-bool PFilterTest::getMesh(std::string filename){
-  std::string stlFilePath;
-  if(!n.getParam("/localization_object_filepath", stlFilePath)){
-    ROS_INFO("Failed to get param");
-  }
-
-  // std::string filepath = "/home/bsaund/ros/ros_marsarm/src/gazebo_ray_trace/sdf/" + localizationObject + ".stl";
-
-  // if(localizationObject == "boeing_part") {
-  mesh = importSTL(stlFilePath);
-    // return true;
-  // }
-  // throw std::invalid_argument("localization object not recognized by particle filter: "
-  // 			      + localizationObject);
-  // return false;
+bool PFilterTest::getMesh(std::string stlFilePath, vector<vec4x3> &datumMesh){
+  datumMesh = importSTL(stlFilePath);
 }
 
 
@@ -315,12 +308,23 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
   datum_idx_vec.push_back(6);
   pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/front_datum/particles_from_filter", 5));
   datum_idx_vec.push_back(1);
-  // pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/top_datum/particles_from_filter", 5));
-  // datum_idx_vec.push_back(7);
+  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/top_datum/particles_from_filter", 5));
+  datum_idx_vec.push_back(4);
 
   ROS_INFO("Loading Boeing Particle Filter");
+
+  if(!n.getParam("/localization_object_dir", stlFileDir)){
+    ROS_INFO("Failed to get param: stlFileDir");
+  }
+
+
+  std::string stlFilePath;
+  if(!n.getParam("/localization_object_filepath", stlFilePath)){
+    ROS_INFO("Failed to get param: stlFilePath");
+  }
+
   // getMesh("boeing_part.stl");
-  getMesh("wood_boeing.stl");
+  getMesh(stlFilePath, mesh);
   // getMesh("part.stl");
   //int num_voxels[3] = { 200,200,200 };
   //dist_transform(num_voxels);

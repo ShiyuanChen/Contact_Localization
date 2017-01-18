@@ -279,7 +279,7 @@ void fixedSelectionEdge(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_star
  * Randomly chooses vectors, gets the Information Gain for each of 
  *  those vectors, and returns the ray (start and end) with the highest information gain
  */
-int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_start, tf::Point &best_end)
+void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_start, tf::Point &best_end, int &bestDatum, string &bestMeshFile)
 {
   int index;
   double bestIG = 0;
@@ -295,7 +295,7 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
   Eigen::Vector3d end;
   
   int datum = 0;
-  int bestDatum = 0;
+  string meshFile;
   for(int i=0; i<100; i++){
     index = int_rand(rd);
     if (index == 0) {
@@ -304,6 +304,7 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
       start << x, 1, z;
       end << x, -1, z;
       datum = 1;
+      meshFile = "front_datum";
       ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
       ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     } else if (index == 1) {
@@ -312,6 +313,7 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
       start << -1, y, z;
       end << 0.5, y, z;
       datum = 5;
+      meshFile = "right_datum";
       ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
       ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     } else if (index == 2) {
@@ -320,16 +322,28 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
       start << 2, y, z;
       end << 0.5, y, z;
       datum = 6;
+      meshFile = "left_datum";
       ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
       ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     } else {
       double x = rand(rd) * 0.9 + 0.1;
-      start << x, -0.0001, 1;
-      end << x, -0.0001, -1;
+      double y = rand(rd) * 0.035 - 0.06;
+      start << x, y, 1;
+      end << x, y, -1;
       datum = 4;
-      ig_start.setValue(start(0, 0), -0.01, 1);
-      ig_end.setValue(end(0, 0), -0.01, -1);
+      meshFile = "top_datum";
+      ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
+      ig_end.setValue(end(0, 0),end(1, 0), end(2, 0));
     }
+    // } else {
+    //   double x = rand(rd) * 0.9 + 0.1;
+    //   start << x, -0.0001, 1;
+    //   end << x, -0.0001, -1;
+    //   datum = 4;
+    //   meshFile = "top_edge";
+    //   ig_start.setValue(start(0, 0), -0.01, 1);
+    //   ig_end.setValue(end(0, 0), -0.01, -1);
+    // }
     
     tf_start.setValue(start(0, 0), start(1, 0), start(2, 0));
     tf_end.setValue(end(0, 0), end(1, 0), end(2, 0));
@@ -348,6 +362,7 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
       best_start = tf_start;
       best_end = tf_end;
       bestDatum = datum;
+      bestMeshFile = meshFile;
     }
   }
   // plt.plotCylinder(best_start, best_end, 0.01, 0.002, true);
@@ -355,7 +370,6 @@ int randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_sta
      best_start.getX(), best_start.getY(), best_start.getZ(),
      best_end.getX(), best_end.getY(), best_end.getZ());
   plt.plotRay(Ray(best_start, best_end));
-  return bestDatum;
 }
 
 
@@ -392,8 +406,10 @@ int main(int argc, char **argv)
     //tf::Point start(0.95,0,-0.15);
     //tf::Point end(0.95,2,-0.15);
     tf::Point start, end;
+    int datum;
+    string meshFile;
     // randomSelection(plt, rayt, start, end);
-    int datum = randomSelectionDatum(plt, rayt, start, end);
+    randomSelectionDatum(plt, rayt, start, end, datum, meshFile);
 
     Ray measurement(start, end);
     
@@ -422,6 +438,7 @@ int main(int argc, char **argv)
     pfilter_obs.request.p = obs;
     pfilter_obs.request.dir = dir;
     pfilter_obs.request.datum = datum;
+    pfilter_obs.request.mesh_file = meshFile;
     if(!srv_add.call(pfilter_obs)){
       ROS_INFO("Failed to call add observation");
     }

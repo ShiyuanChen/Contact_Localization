@@ -20,6 +20,9 @@
   <param name="localization_object" type="str"
 	 value="$(arg localization_object)"/>
 
+  <param name="localization_object_dir" type="str"
+   value="$(find custom_ray_trace)/sdf/"/>
+
   <rosparam param="initial_uncertainties">
     [0.02, 0.03, 0.02, 0.00002, 0.00002, 0.00002]
     <!-- [.05, .05, .05, 0,0,0] -->

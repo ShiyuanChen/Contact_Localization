@@ -95,34 +95,45 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     transPointConfig(baseConfig, relativeConfig, transformedConfig);
     copyParticles(transformedConfig, fullJointPrev[i], 3 * cdim);
 
-    // Top edge
-    double edgeTol = 0.001;
-    double edgeOffSet = 0.23;
-    Eigen::Vector3d pa, pb; 
-    pa << edgeConfig[0], edgeConfig[1], edgeConfig[2];
-    pb << edgeConfig[3], edgeConfig[4], edgeConfig[5];
-    Eigen::Vector3d pa_prime, pb_prime;
-    inverseTransform(pa, frontPlaneConfig, pa_prime);
-    inverseTransform(pb, frontPlaneConfig, pb_prime);
-    double td = dist(rd) * edgeTol;
-    // pa_prime(1) = 0;
-    // pb_prime(1) = 0;
-    Eigen::Vector3d normVec;
-    normVec << (pb_prime(2) - pa_prime(2)), 0, (pa_prime(0) - pb_prime(0));
-    normVec.normalize();
-    normVec *= (edgeOffSet + td);
-    pa_prime(0) += normVec(0);
-    pb_prime(0) += normVec(0);
-    pa_prime(2) += normVec(2);
-    pb_prime(2) += normVec(2);
-    Transform(pa_prime, frontPlaneConfig, pa);
-    Transform(pb_prime, frontPlaneConfig, pb);
-    fullJointPrev[i][24] = pa(0);
-    fullJointPrev[i][25] = pa(1);
-    fullJointPrev[i][26] = pa(2);
-    fullJointPrev[i][27] = pb(0);
-    fullJointPrev[i][28] = pb(1);
-    fullJointPrev[i][29] = pb(2);
+    // // Top edge
+    // double edgeTol = 0.001;
+    // double edgeOffSet = 0.23;
+    // Eigen::Vector3d pa, pb; 
+    // pa << edgeConfig[0], edgeConfig[1], edgeConfig[2];
+    // pb << edgeConfig[3], edgeConfig[4], edgeConfig[5];
+    // Eigen::Vector3d pa_prime, pb_prime;
+    // inverseTransform(pa, frontPlaneConfig, pa_prime);
+    // inverseTransform(pb, frontPlaneConfig, pb_prime);
+    // double td = dist(rd) * edgeTol;
+    // // pa_prime(1) = 0;
+    // // pb_prime(1) = 0;
+    // Eigen::Vector3d normVec;
+    // normVec << (pb_prime(2) - pa_prime(2)), 0, (pa_prime(0) - pb_prime(0));
+    // normVec.normalize();
+    // normVec *= (edgeOffSet + td);
+    // pa_prime(0) += normVec(0);
+    // pb_prime(0) += normVec(0);
+    // pa_prime(2) += normVec(2);
+    // pb_prime(2) += normVec(2);
+    // Transform(pa_prime, frontPlaneConfig, pa);
+    // Transform(pb_prime, frontPlaneConfig, pb);
+    // fullJointPrev[i][24] = pa(0);
+    // fullJointPrev[i][25] = pa(1);
+    // fullJointPrev[i][26] = pa(2);
+    // fullJointPrev[i][27] = pb(0);
+    // fullJointPrev[i][28] = pb(1);
+    // fullJointPrev[i][29] = pb(2);
+
+    // Top Plane
+    relativeConfig[0] = 0 + dist(rd) * 0.001;
+    relativeConfig[1] = -0.063 + dist(rd) * 0.001;
+    relativeConfig[2] = 0.23 + dist(rd) * 0.001;
+    relativeConfig[3] = -1.570796;
+    relativeConfig[4] = 0;
+    relativeConfig[5] = 0;
+    baseConfig = tmpConfig;
+    transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
+    copyParticles(topPlaneConfig, fullJointPrev[i], 4 * cdim);
 
     // Right Plane
     relativeConfig[0] = 0 + dist(rd) * 0.001;
