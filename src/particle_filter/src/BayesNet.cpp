@@ -32,6 +32,7 @@ void BayesNet::addRoot(int n_particles, cspace b_init[2])
   maxNumParticles = numParticles;
   fullJoint.resize(numParticles);
   fullJointPrev.resize(numParticles);
+  holeParticles.resize(numParticles);
   createFullJoint(b_init);
 
   // for (int i = 0; i < numNode; i ++) {
@@ -43,6 +44,70 @@ void BayesNet::addRoot(int n_particles, cspace b_init[2])
   //   }
   // }
 }
+
+void BayesNet::generateHole(jointCspace &joint, int datum1, int datum2, int plane, double holeOffset1, double holeOffset2, cspace &hole) {
+  Eigen::Vector3d pa1, pb1, pa2, pb2;
+  int datum1Start = datum1 * cdim;
+  int datum2Start = datum2 * cdim;
+  int planeStart = plane * cdim;
+
+  pa1 << joint[datum1Start], joint[datum1Start + 1], joint[datum1Start + 2];
+  pb1 << joint[datum1Start + 3], joint[datum1Start + 4], joint[datum1Start + 5];
+  pa2 << joint[datum2Start], joint[datum2Start + 1], joint[datum2Start + 2];
+  pb2 << joint[datum2Start + 3], joint[datum2Start + 4], joint[datum2Start + 5];
+
+  cspace planeConfig;
+  for (int i = 0; i < cdim; i ++) {
+    planeConfig[i] = joint[planeStart + i];
+  }
+
+  Eigen::Vector3d pa1_prime, pb1_prime, pa2_prime, pb2_prime;
+  
+  inverseTransform(pa1, planeConfig, pa1_prime);
+  inverseTransform(pb1, planeConfig, pb1_prime);
+  inverseTransform(pa2, planeConfig, pa2_prime);
+  inverseTransform(pb2, planeConfig, pb2_prime);
+  Eigen::Vector3d normVec;
+  normVec << -(pb1_prime(2) - pa1_prime(2)), 0, -(pa1_prime(0) - pb1_prime(0));
+  normVec.normalize();
+  normVec *= (holeOffset1);
+  pa1_prime(0) += normVec(0);
+  pb1_prime(0) += normVec(0);
+  pa1_prime(2) += normVec(2);
+  pb1_prime(2) += normVec(2);
+
+  normVec << -(pb2_prime(2) - pa2_prime(2)), 0, -(pa2_prime(0) - pb2_prime(0));
+  normVec.normalize();
+  normVec *= (holeOffset2);
+  pa2_prime(0) += normVec(0);
+  pb2_prime(0) += normVec(0);
+  pa2_prime(2) += normVec(2);
+  pb2_prime(2) += normVec(2);
+
+  Eigen::Matrix2d divisor, dividend; 
+  divisor << pa1_prime(0) - pb1_prime(0), pa1_prime(2) - pb1_prime(2),
+             pa2_prime(0) - pb2_prime(0), pa2_prime(2) - pb2_prime(2);
+  dividend << pa1_prime(0)*pb1_prime(2) - pa1_prime(2)*pb1_prime(0), pa1_prime(0) - pb1_prime(0),
+              pa2_prime(0)*pb2_prime(2) - pa2_prime(2)*pb2_prime(0), pa2_prime(0) - pb2_prime(0);
+  Eigen::Vector3d pi_prime, pi, dir_prime, origin_prime, dir, origin;
+  pi_prime(0) = dividend.determinant() / divisor.determinant();
+  dividend << pa1_prime(0)*pb1_prime(2) - pa1_prime(2)*pb1_prime(0), pa1_prime(2) - pb1_prime(2),
+              pa2_prime(0)*pb2_prime(2) - pa2_prime(2)*pb2_prime(0), pa2_prime(2) - pb2_prime(2);
+  pi_prime(1) = 0;
+  pi_prime(2) = dividend.determinant() / divisor.determinant();
+  dir_prime << 0, 1, 0; origin_prime << 0, 0, 0;
+  Transform(pi_prime, planeConfig, pi);
+  Transform(dir_prime, planeConfig, dir);
+  Transform(origin_prime, planeConfig, origin);
+  dir -= origin;
+  hole[0] = pi(0);
+  hole[1] = pi(1);
+  hole[2] = pi(2);
+  hole[3] = dir(0);
+  hole[4] = dir(1);
+  hole[5] = dir(2);
+}
+
 
 void BayesNet::createFullJoint(cspace b_Xprior[2]) {
   
@@ -66,9 +131,9 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     // relativeConfig[4] = 0 + dist(rd) * 0.01;
     // relativeConfig[5] = Pi + dist(rd) * 0.01;
     relativeConfig[0] = 1.2192;
-    relativeConfig[1] = -0.025 + dist(rd) * 0.001;
+    relativeConfig[1] = -0.025 ;
     relativeConfig[2] = 0.014;
-    relativeConfig[3] = 0 + dist(rd) * 0.001;
+    relativeConfig[3] = 0 ;
     relativeConfig[4] = 0;
     relativeConfig[5] = Pi;
     baseConfig = tmpConfig;
@@ -87,7 +152,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     copyParticles(edgeConfig, fullJointPrev[i], 2 * cdim);
 
     // Side Edge
-    cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0005,0.0005,0.0005}};
+    cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0,0.0,0.0}};
     for (int j = 0; j < cdim; j++) {
       relativeConfig[j] = prior2[0][j] + prior2[1][j] * (dist(rd));
     }
@@ -160,7 +225,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
 
 
     // Hole 
-
+    generateHole(fullJointPrev[i], 4, 3, 1, 0.1, 0.2, holeParticles[i]);
 
   }
   fullJoint = fullJointPrev;
@@ -248,6 +313,8 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int
         for (int j = 0; j < fulldim; j++) {
           fullJoint[i][j] = tempFullState[j];
         }
+        // Hole 
+        generateHole(fullJoint[i], 4, 3, 1, 0.1, 0.2, holeParticles[i]);
         if (checkEmptyBin(&bins, tempState) == 1) {
           num_bins++;
           // if (i >= N_MIN) {
@@ -318,6 +385,9 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int
         for (int j = 0; j < fulldim; j++) {
           fullJoint[i][j] = tempFullState[j];
         }
+        // Hole 
+        generateHole(fullJoint[i], 4, 3, 1, 0.1, 0.2, holeParticles[i]);
+
         if (checkEmptyBin(&bins, tempState) == 1) {
           num_bins++;
           // if (i >= N_MIN) {
@@ -384,6 +454,30 @@ void BayesNet::estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx) {
     x_est_stat[k] = 0;
     for (int j = 0; j < numParticles; j++) {
       x_est_stat[k] += SQ(fullJoint[j][k + idx * cdim] - x_mean[k]);
+    }
+    x_est_stat[k] = sqrt(x_est_stat[k] / numParticles);
+    cout << x_est_stat[k] << "  ";
+  }
+  cout << endl;
+
+}
+
+void BayesNet::estimateHole(cspace &x_mean, cspace &x_est_stat) {
+  cout << "Estimated Hole Mean: ";
+  for (int k = 0; k < cdim; k++) {
+    x_mean[k] = 0;
+    for (int j = 0; j < numParticles; j++) {
+      x_mean[k] += holeParticles[j][k];
+    }
+    x_mean[k] /= numParticles;
+    cout << x_mean[k] << "  ";
+  }
+  cout << endl;
+  cout << "Estimated Hole Std: ";
+  for (int k = 0; k < cdim; k++) {
+    x_est_stat[k] = 0;
+    for (int j = 0; j < numParticles; j++) {
+      x_est_stat[k] += SQ(holeParticles[j][k] - x_mean[k]);
     }
     x_est_stat[k] = sqrt(x_est_stat[k] / numParticles);
     cout << x_est_stat[k] << "  ";

@@ -19,7 +19,9 @@ public:
   // vector<Node *> node;
   FullJoint fullJoint;
   FullJoint fullJointPrev;
-  
+  Particles holeParticles;
+
+
   Eigen::MatrixXd cov_mat;
   int numFullJoint;
   int numNode;
@@ -28,7 +30,9 @@ public:
   void createFullJoint(cspace b_Xprior[2]);
   bool updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int idx);
   void estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx);
+  void estimateHole(cspace &x_mean, cspace &x_est_stat);
   void getAllParticles(Particles &particles_dest, int idx);
+  void generateHole(jointCspace &joint, int datum1, int datum2, int plane, double holeOffset1, double holeOffset2, cspace &hole);
   // vector<cspace> priorSample();
 };
 
