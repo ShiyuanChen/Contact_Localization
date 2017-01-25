@@ -303,13 +303,13 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
   // pub_particles2 = n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5);
 
   pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/right_datum/particles_from_filter", 5));
-  datum_idx_vec.push_back(5);
+  datum_idx_vec.push_back(3);
   pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5));
-  datum_idx_vec.push_back(6);
+  datum_idx_vec.push_back(4);
   pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/front_datum/particles_from_filter", 5));
   datum_idx_vec.push_back(1);
   pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/top_datum/particles_from_filter", 5));
-  datum_idx_vec.push_back(4);
+  datum_idx_vec.push_back(2);
 
   ROS_INFO("Loading Boeing Particle Filter");
 

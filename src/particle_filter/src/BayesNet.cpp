@@ -76,30 +76,30 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     relativeConfig[2] = 0.014;
     relativeConfig[3] = 0 + dist(rd) * 0.001;
     relativeConfig[4] = 0;
-    relativeConfig[5] = Pi;
+    relativeConfig[5] = Pi + dist(rd) * 0.001;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, frontPlaneConfig);
     //TEMP:
     if (frontPlaneConfig[5] < 0)  frontPlaneConfig[5] += 2 * Pi;
     copyParticles(frontPlaneConfig, fullJointPrev[i], cdim);
 
-    // Bottom Edge
-    cspace prior1[2] = {{0,0,0,1.22,0,0},{0,0,0,0.0005,0.0005,0.0005}};
-    for (int j = 0; j < cdim; j++) {
-      relativeConfig[j] = prior1[0][j] + prior1[1][j] * (dist(rd));
-    }
-    baseConfig = tmpConfig;
-    transPointConfig(baseConfig, relativeConfig, edgeConfig);
-    copyParticles(edgeConfig, fullJointPrev[i], 2 * cdim);
+    // // Bottom Edge
+    // cspace prior1[2] = {{0,0,0,1.22,0,0},{0,0,0,0.0005,0.0005,0.0005}};
+    // for (int j = 0; j < cdim; j++) {
+    //   relativeConfig[j] = prior1[0][j] + prior1[1][j] * (dist(rd));
+    // }
+    // baseConfig = tmpConfig;
+    // transPointConfig(baseConfig, relativeConfig, edgeConfig);
+    // copyParticles(edgeConfig, fullJointPrev[i], 2 * cdim);
 
-    // Side Edge
-    cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0005,0.0005,0.0005}};
-    for (int j = 0; j < cdim; j++) {
-      relativeConfig[j] = prior2[0][j] + prior2[1][j] * (dist(rd));
-    }
-    baseConfig = tmpConfig;
-    transPointConfig(baseConfig, relativeConfig, transformedConfig);
-    copyParticles(transformedConfig, fullJointPrev[i], 3 * cdim);
+    // // Side Edge
+    // cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0005,0.0005,0.0005}};
+    // for (int j = 0; j < cdim; j++) {
+    //   relativeConfig[j] = prior2[0][j] + prior2[1][j] * (dist(rd));
+    // }
+    // baseConfig = tmpConfig;
+    // transPointConfig(baseConfig, relativeConfig, transformedConfig);
+    // copyParticles(transformedConfig, fullJointPrev[i], 3 * cdim);
 
     // // Top edge
     // double edgeTol = 0.001;
@@ -139,7 +139,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     relativeConfig[5] = 0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
-    copyParticles(topPlaneConfig, fullJointPrev[i], 4 * cdim);
+    copyParticles(topPlaneConfig, fullJointPrev[i], 2 * cdim);
 
     // Right Plane
     relativeConfig[0] = 0 + dist(rd) * 0.001;
@@ -150,7 +150,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     relativeConfig[5] = -Pi / 2.0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, rightPlaneConfig);
-    copyParticles(rightPlaneConfig, fullJointPrev[i], 5 * cdim);
+    copyParticles(rightPlaneConfig, fullJointPrev[i], 3 * cdim);
 
     // Left Plane
     relativeConfig[0] = 1.22 + dist(rd) * 0.01;
@@ -162,7 +162,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     relativeConfig[5] = Pi / 2.0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
-    copyParticles(leftPlaneConfig, fullJointPrev[i], 6 * cdim);
+    copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);
 
     // // Top Plane
     // relativeConfig[0] = 0 + dist(rd) * 0.001;

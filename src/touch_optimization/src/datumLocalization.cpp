@@ -312,7 +312,7 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
       double z = rand(rd) * 0.18 + 0.03;
       start << -1, y, z;
       end << 0.5, y, z;
-      datum = 5;
+      datum = 3;
       meshFile = "right_datum";
       ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
       ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
@@ -321,7 +321,7 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
       double z = rand(rd) * 0.18 + 0.03;
       start << 2, y, z;
       end << 0.5, y, z;
-      datum = 6;
+      datum = 4;
       meshFile = "left_datum";
       ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
       ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
@@ -330,7 +330,7 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
       double y = rand(rd) * 0.035 - 0.06;
       start << x, y, 1;
       end << x, y, -1;
-      datum = 4;
+      datum = 2;
       meshFile = "top_datum";
       ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
       ig_end.setValue(end(0, 0),end(1, 0), end(2, 0));
