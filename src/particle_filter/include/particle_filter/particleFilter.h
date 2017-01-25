@@ -10,11 +10,11 @@
 #include "distanceTransformNew.h"
 using namespace std;
 
-class Node;
+// class Node;
 class particleFilter
 {
  public:
-  static const int cdim = 6;
+  static const int cdim;
   int numParticles; // number of particles
   int maxNumParticles;
 
@@ -49,8 +49,8 @@ class particleFilter
   // Local functions
   // void createParticles(Particles &particles, cspace b_Xprior[2], int n_particles);
   // bool updateParticles(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss);
-  Node* addDatum(std::vector<Node*> node, std::vector<double[3]> offset, std::vector<double[3]> tol);
-  Node* addInitialDatum();
+  // Node* addDatum(std::vector<Node*> node, std::vector<double[3]> offset, std::vector<double[3]> tol);
+  // Node* addInitialDatum();
 };
 // void Transform(double measure[3], cspace src, double dest[3]);
 void Transform(double measure[2][3], cspace src, double dest[2][3]);

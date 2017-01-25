@@ -16,7 +16,6 @@
 #include "particleFilter.h"
 #include "matrix.h"
 #include "stlParser.h"
-#include "Node.h"
 #include "BayesNet.h"
 
 using namespace std;
@@ -27,6 +26,7 @@ double TRUE_STATE[6] = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
 
 //vector<vec4x3> importSTL(string filename);
 
+const int particleFilter::cdim = 6;
 /*
  * particleFilter class Construction
  * Input: n_particles: number of particles
@@ -44,7 +44,7 @@ particleFilter::particleFilter(int n_particles, cspace b_init[2],
 {
   b_Xprior[0] = b_init[0];
   b_Xprior[1] = b_init[1];
-  bayesNet.addRoot(numParticles, b_Xprior);
+  bayesNet.addRoot(numParticles, b_Xprior, Xstd_ob);
   // root = new Node(numParticles, b_Xprior);
   // root->addDatum
   // particles.resize(numParticles);
@@ -63,28 +63,28 @@ particleFilter::particleFilter(int n_particles, cspace b_init[2],
 }
 
 
-Node* particleFilter::addDatum(std::vector<Node*> node, std::vector<double[3]> offset, std::vector<double[3]> tol)
-{
-	// int n = node.size();
-	// for (int i = 0; i < n; i ++) {
-	// 	Node* nodeptr = node[i];
-	// 	Parent *parent = new Parent(nodeptr, )
-	// }
-}
+// Node* particleFilter::addDatum(std::vector<Node*> node, std::vector<double[3]> offset, std::vector<double[3]> tol)
+// {
+// 	// int n = node.size();
+// 	// for (int i = 0; i < n; i ++) {
+// 	// 	Node* nodeptr = node[i];
+// 	// 	Parent *parent = new Parent(nodeptr, )
+// 	// }
+// }
 
-Node* particleFilter::addInitialDatum()
-{
-	// Parent *parent = new Parent(bayesNet.node[0], 0, 0);
-	// std::vector<Parent *> p;
-	// p.push_back(parent);
-	// bayesNet.node[0]->child.push_back(new Node(numParticles, p, 1));
+// Node* particleFilter::addInitialDatum()
+// {
+// 	// Parent *parent = new Parent(bayesNet.node[0], 0, 0);
+// 	// std::vector<Parent *> p;
+// 	// p.push_back(parent);
+// 	// bayesNet.node[0]->child.push_back(new Node(numParticles, p, 1));
 
-	// int n = node.size();
-	// for (int i = 0; i < n; i ++) {
-	// 	Node* nodeptr = node[i];
-	// 	Parent *parent = new Parent(nodeptr, )
-	// }
-}
+// 	// int n = node.size();
+// 	// for (int i = 0; i < n; i ++) {
+// 	// 	Node* nodeptr = node[i];
+// 	// 	Parent *parent = new Parent(nodeptr, )
+// 	// }
+// }
 
 
 
@@ -140,7 +140,10 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
 
   // bool iffar = root->updateParticles(obs, mesh, dist_transform, Xstd_ob, R, miss);
   // bool iffar = bayesNet.node[0]->child[1]->child[0]->update(obs, Xstd_ob, R);
-  bool iffar = bayesNet.updateFullJoint(obs, Xstd_ob, R, datum);
+  // bool iffar = bayesNet.updateFullJoint(obs, Xstd_ob, R, datum);
+
+  bool iffar = bayesNet.updateFullJoint(obs, mesh, dist_transform, Xstd_ob, R, datum);
+
   auto timer_end = std::chrono::high_resolution_clock::now();
   auto timer_dur = timer_end - timer_begin;
 

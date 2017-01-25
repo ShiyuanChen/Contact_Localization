@@ -172,9 +172,9 @@ add_library(BayesNet src/BayesNet.cpp)
 target_link_libraries(BayesNet
   ${catkin_LIBRARIES})
 
-add_library(Node src/Node.cpp)
-target_link_libraries(Node
-  ${catkin_LIBRARIES})
+#add_library(Node src/Node.cpp)
+#target_link_libraries(Node
+#  ${catkin_LIBRARIES})
 
 add_library(circleEllipse src/circleEllipse.cpp)
 target_link_libraries(circleEllipse
@@ -209,7 +209,6 @@ target_link_libraries(pfilterBoeingTest
   rayTri
   triBox
   BayesNet
-  Node 
   circleEllipse
   ${PCL_LIBRARIES}
 )

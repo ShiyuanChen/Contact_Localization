@@ -160,10 +160,10 @@ bool PFilterTest::addObs(particle_filter::AddObservation::Request &req,
   double obs2[2][3] = {{obs.x, obs.y, obs.z}, {dir.x, dir.y, dir.z}};
 
   vector<vec4x3> datumMesh;
-  getMesh(meshFile, datumMesh);
+  getMesh(stlFileDir + meshFile + ".stl", datumMesh);
 
-  pFilter_.addObservation(obs2, mesh, dist_transform, 0, datum);
-
+  // pFilter_.addObservation(obs2, mesh, dist_transform, 0, datum);
+  pFilter_.addObservation(obs2, datumMesh, dist_transform, 0, datum);
   ROS_INFO("...Done adding observation");
   pub_particles.publish(getParticlePoseArray(0));
   int size = pub_particles_vec.size();

@@ -107,5 +107,6 @@ void copyParticles(cspace config, fullCspace &fullConfig, int idx);
 void copyParticles(cspace config, jointCspace &jointConfig, int idx);
 int checkEmptyBin(std::unordered_set<string> *set, cspace config);
 void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, double euclDist[2]);
+int checkIntersections(vector<vec4x3> &mesh, double voxel_center[3], double dir[3], double check_length, double &dist);
 #endif // NODE_H
 

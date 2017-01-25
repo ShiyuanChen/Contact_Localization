@@ -1296,3 +1296,61 @@ int checkEmptyBin(std::unordered_set<string> *set, cspace config)
   }
   return 0;
 }
+
+int checkIntersections(vector<vec4x3> &mesh, double voxel_center[3], double dir[3], double check_length, double &dist)
+{
+  int countIntersections = 0;
+  int countIntRod = 0;
+  int num_mesh = int(mesh.size());
+  double vert0[3], vert1[3], vert2[3];
+  double *t = new double;
+  double *u = new double;
+  double *v = new double;
+  double tMax = 0;
+  double ray_dir[3] = {-dir[0], -dir[1], -dir[2]};
+  Eigen::Vector3d normal_dir;
+  Eigen::Vector3d ray_length;
+  double inside_length;
+  std::unordered_set<double> hashset;
+  //std::unordered_map<double, int> hashmap;
+  for (int i = 0; i < num_mesh; i++) {
+    vert0[0] = mesh[i][1][0];
+    vert0[1] = mesh[i][1][1];
+    vert0[2] = mesh[i][1][2];
+    vert1[0] = mesh[i][2][0];
+    vert1[1] = mesh[i][2][1];
+    vert1[2] = mesh[i][2][2];
+    vert2[0] = mesh[i][3][0];
+    vert2[1] = mesh[i][3][1];
+    vert2[2] = mesh[i][3][2];
+    if (intersect_triangle(voxel_center, ray_dir, vert0, vert1, vert2, t, u, v) == 1) {
+      if (hashset.find(*t) == hashset.end()) {
+        if (*t < check_length && *t > tMax) {
+          countIntRod++;
+          tMax = *t;
+          normal_dir << mesh[i][0][0], mesh[i][0][1], mesh[i][0][2];
+        }
+        else if (*t < check_length)
+          countIntRod++;
+        hashset.insert(*t);
+        countIntersections++;
+      }
+    }
+  }
+  delete t, u, v;
+  if (countIntersections % 2 == 0) {
+    if (tMax > 0)
+      return 1;
+    return 0;
+  }
+  else {
+  dist = -dist;
+  if (tMax > 0 && countIntRod % 2 == 1) {
+    ray_length << tMax * dir[0], tMax * dir[1], tMax * dir[2];
+    double inter_dist = normal_dir.dot(ray_length);
+    if (inter_dist >= dist - EPSILON && inter_dist <= dist + EPSILON)
+      return 0;
+  }
+  return 1;
+  }
+}
