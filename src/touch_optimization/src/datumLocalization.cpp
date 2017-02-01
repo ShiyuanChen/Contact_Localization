@@ -279,7 +279,7 @@ void fixedSelectionEdge(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_star
  * Randomly chooses vectors, gets the Information Gain for each of 
  *  those vectors, and returns the ray (start and end) with the highest information gain
  */
-void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_start, tf::Point &best_end, int &bestDatum, string &bestMeshFile)
+void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf::Point &best_start, tf::Point &best_end, int &bestDatum, int &bestIdx, string &bestMeshFile)
 {
   int index;
   double bestIG = 0;
@@ -288,7 +288,7 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
   bestIG = 0;
   std::random_device rd;
   std::uniform_real_distribution<double> rand(0, 1);
-  std::uniform_int_distribution<> int_rand(0, 5);
+  std::uniform_int_distribution<> int_rand(0, 3);
   Eigen::Vector3d start;
   Eigen::Vector3d end;
   
@@ -339,7 +339,7 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
     tf_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     Ray measurement(tf_start, tf_end);
     // auto timer_begin = std::chrono::high_resolution_clock::now();
-    double IG = rayt.getIG(measurement, 0.01, 0.002);
+    double IG = rayts[index]->getIG(measurement, 0.01, 0.002);
     // plt.plotRay(measurement);
     // plt.labelRay(measurement, IG);
     // auto timer_end = std::chrono::high_resolution_clock::now();
@@ -353,6 +353,7 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
       best_end = tf_end;
       bestDatum = datum;
       bestMeshFile = meshFile;
+      bestIdx = index;
     }
   }
   // plt.plotCylinder(best_start, best_end, 0.01, 0.002, true);
@@ -368,7 +369,14 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "updating_particles");
   ros::NodeHandle n;
   PlotRayUtils plt;
-  RayTracer rayt;
+  // RayTracer rayt;
+
+  std::vector<std::string> datums = {"front_datum", "right_datum", "left_datum",
+            "top_datum"};
+  std::vector<RayTracer*> rayts;
+
+  for (std::string &filename : datums)
+    rayts.push_back(new RayTracer(filename));
 
   std::random_device rd;
   std::normal_distribution<double> randn(0.0,0.00000001);
@@ -396,16 +404,16 @@ int main(int argc, char **argv)
     //tf::Point start(0.95,0,-0.15);
     //tf::Point end(0.95,2,-0.15);
     tf::Point start, end;
-    int datum;
+    int datum, datumidx;
     string meshFile;
     // randomSelection(plt, rayt, start, end);
-    randomSelectionDatum(plt, rayt, start, end, datum, meshFile);
+    randomSelectionDatum(plt, rayts, start, end, datum, datumidx, meshFile);
 
     Ray measurement(start, end);
     
     // double distToPart = 1.025;
     double distToPart = 1;
-    if(!rayt.traceRay(measurement, distToPart)){
+    if(!rayts[datumidx]->traceRay(measurement, distToPart)){
       ROS_INFO("NO INTERSECTION, Skipping");
       continue;
     }
@@ -434,7 +442,7 @@ int main(int argc, char **argv)
     }
 
     ros::spinOnce();
-    while(!rayt.particleHandler.newParticles){
+    while(!rayts[datumidx]->particleHandler.newParticles){
       ROS_INFO_THROTTLE(10, "Waiting for new particles...");
       ros::spinOnce();
       ros::Duration(.1).sleep();

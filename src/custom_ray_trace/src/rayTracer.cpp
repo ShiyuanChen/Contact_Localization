@@ -166,16 +166,31 @@ RayTracer::RayTracer()
   loadMesh();
 }
 
+RayTracer::RayTracer(std::string filename) 
+{
+  loadMesh(filename);
+}
 
 bool RayTracer::loadMesh(){
   std::string stlFilePath;
   if(!n_.getParam("/localization_object_filepath", stlFilePath)){
-    ROS_INFO("Failed to get param");
+    ROS_INFO("Failed to get param: localization_object_filepath");
   }
 
   mesh = stl::importSTL(stlFilePath);
   surroundingBox = stl::getSurroundingBox(mesh);
 }
+
+bool RayTracer::loadMesh(std::string filename){
+  std::string stlFileDir;
+  if(!n_.getParam("/localization_object_dir", stlFileDir)){
+    ROS_INFO("Failed to get param: localization_object_dir");
+  }
+
+  mesh = stl::importSTL(stlFileDir + filename + ".stl");
+  surroundingBox = stl::getSurroundingBox(mesh);
+}
+
 
 stl::Mesh RayTracer::getBoxAroundAllParticles(stl::Mesh mesh)
 {

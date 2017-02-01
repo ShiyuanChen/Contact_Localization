@@ -61,9 +61,10 @@ class RayTracer
 
   
  public:
-
+  RayTracer(std::string filename);
   RayTracer();
   bool loadMesh();
+  bool loadMesh(std::string filename);
   bool tracePartFrameRay(const Ray &ray, double &distToPart, bool quick=false);
   bool traceRay(Ray ray, double &distToPart);
   bool traceRay(const stl::Mesh &mesh, const Ray &ray, double &distToPart);
