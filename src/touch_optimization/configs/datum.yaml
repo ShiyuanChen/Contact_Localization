@@ -14,7 +14,7 @@ right_datum:
   # localization_object_filepath: package://custom_ray_trace/sdf/right_datum.stl # 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
-  true_state: [0, 0, 0, 0, 0, -1.570796]
+  true_state: [0, 0, 0, 0, 0, 0]
 
 left_datum:
   color: [0.5, 0.5, 0, 0.2]
@@ -24,7 +24,7 @@ left_datum:
   # localization_object_filepath: package://custom_ray_trace/sdf/top_datum.stl 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
-  true_state: [1.2192, 0, 0, 0, 0, 1.570796]
+  true_state: [0, 0, 0, 0, 0, 0]
 
 top_datum:
   color: [0.5, 0, 0.5, 0.2]
@@ -34,7 +34,7 @@ top_datum:
   # localization_object_filepath: package://custom_ray_trace/sdf/top_datum.stl 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
-  true_state: [0, -0.063, 0.23, -1.570796, 0, 0]
+  true_state: [0, 0, 0, 0, 0, 0]
   
 front_datum:
   color: [0, 0.5, 0.5, 0.2]
@@ -44,4 +44,4 @@ front_datum:
   # localization_object_filepath: package://custom_ray_trace/sdf/top_datum.stl 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
-  true_state: [1.2192, -0.025, 0.014, 0, 0, 3.141593]
+  true_state: [0, 0, 0, 0, 0, 0]

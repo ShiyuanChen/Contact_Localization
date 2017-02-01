@@ -285,8 +285,6 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
   double bestIG = 0;
   tf::Point tf_start;
   tf::Point tf_end;
-  tf::Point ig_start;
-  tf::Point ig_end;
   bestIG = 0;
   std::random_device rd;
   std::uniform_real_distribution<double> rand(0, 1);
@@ -305,8 +303,6 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
       end << x, -1, z;
       datum = 1;
       meshFile = "front_datum";
-      ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
-      ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     } else if (index == 1) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.18 + 0.03;
@@ -314,8 +310,6 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
       end << 0.5, y, z;
       datum = 3;
       meshFile = "right_datum";
-      ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
-      ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     } else if (index == 2) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.18 + 0.03;
@@ -323,8 +317,6 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
       end << 0.5, y, z;
       datum = 4;
       meshFile = "left_datum";
-      ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
-      ig_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     } else {
       double x = rand(rd) * 0.9 + 0.1;
       double y = rand(rd) * 0.035 - 0.06;
@@ -332,8 +324,6 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
       end << x, y, -1;
       datum = 2;
       meshFile = "top_datum";
-      ig_start.setValue(start(0, 0), start(1, 0), start(2, 0));
-      ig_end.setValue(end(0, 0),end(1, 0), end(2, 0));
     }
     // } else {
     //   double x = rand(rd) * 0.9 + 0.1;
@@ -347,7 +337,7 @@ void randomSelectionDatum(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_st
     
     tf_start.setValue(start(0, 0), start(1, 0), start(2, 0));
     tf_end.setValue(end(0, 0), end(1, 0), end(2, 0));
-    Ray measurement(ig_start, ig_end);
+    Ray measurement(tf_start, tf_end);
     // auto timer_begin = std::chrono::high_resolution_clock::now();
     double IG = rayt.getIG(measurement, 0.01, 0.002);
     // plt.plotRay(measurement);

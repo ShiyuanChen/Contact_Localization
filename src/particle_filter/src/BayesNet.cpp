@@ -71,16 +71,16 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     // relativeConfig[3] = 0 + dist(rd) * 0.01;
     // relativeConfig[4] = 0 + dist(rd) * 0.01;
     // relativeConfig[5] = Pi + dist(rd) * 0.01;
-    relativeConfig[0] = 1.2192;
-    relativeConfig[1] = -0.025 + dist(rd) * 0.001;
-    relativeConfig[2] = 0.014;
+    relativeConfig[0] = 0;
+    relativeConfig[1] = 0 + dist(rd) * 0.001;
+    relativeConfig[2] = 0;
     relativeConfig[3] = 0 + dist(rd) * 0.001;
     relativeConfig[4] = 0;
-    relativeConfig[5] = Pi + dist(rd) * 0.001;
+    relativeConfig[5] = 0 + dist(rd) * 0.001;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, frontPlaneConfig);
     //TEMP:
-    if (frontPlaneConfig[5] < 0)  frontPlaneConfig[5] += 2 * Pi;
+    // if (frontPlaneConfig[5] < 0)  frontPlaneConfig[5] += 2 * Pi;
     copyParticles(frontPlaneConfig, fullJointPrev[i], cdim);
 
     // // Bottom Edge
@@ -132,9 +132,9 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
 
     // Top Plane
     relativeConfig[0] = 0 + dist(rd) * 0.001;
-    relativeConfig[1] = -0.063 + dist(rd) * 0.001;
-    relativeConfig[2] = 0.23 + dist(rd) * 0.001;
-    relativeConfig[3] = -1.570796;
+    relativeConfig[1] = 0 + dist(rd) * 0.001;
+    relativeConfig[2] = 0 + dist(rd) * 0.001;
+    relativeConfig[3] = 0;
     relativeConfig[4] = 0;
     relativeConfig[5] = 0;
     baseConfig = tmpConfig;
@@ -147,19 +147,19 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     relativeConfig[2] = 0;
     relativeConfig[3] = 0;
     relativeConfig[4] = 0;
-    relativeConfig[5] = -Pi / 2.0;
+    relativeConfig[5] = 0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, rightPlaneConfig);
     copyParticles(rightPlaneConfig, fullJointPrev[i], 3 * cdim);
 
     // Left Plane
-    relativeConfig[0] = 1.22 + dist(rd) * 0.01;
+    relativeConfig[0] = 0 + dist(rd) * 0.01;
     // relativeConfig[0] = 1.2192;
     relativeConfig[1] = 0;
     relativeConfig[2] = 0;
     relativeConfig[3] = 0;
     relativeConfig[4] = 0;
-    relativeConfig[5] = Pi / 2.0;
+    relativeConfig[5] = 0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
     copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);
