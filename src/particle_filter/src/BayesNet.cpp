@@ -38,6 +38,7 @@ void BayesNet::addRoot(int n_particles, cspace b_init[2], double Xstdob)
   maxNumParticles = numParticles;
   fullJoint.resize(numParticles);
   fullJointPrev.resize(numParticles);
+  holeConfigs.resize(numParticles);
   createFullJoint(b_init);
 
   // for (int i = 0; i < numNode; i ++) {
@@ -322,8 +323,7 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int
   return iffar;
 }
 
-void BayesNet::buildDistTransform(double cur_M[2][3], vector<vec4x3> &mesh,
-                                  distanceTransform *dist_transform, int nodeidx) {
+void BayesNet::buildDistTransform(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, int nodeidx) {
   int num_Mean = numParticles;
   std::vector<std::array<double,3>> measure_workspace;
   measure_workspace.resize(num_Mean);
@@ -467,6 +467,7 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh, distanc
       for (int j = 0; j < fulldim; j++) {
         fullJoint[i][j] = tempFullState[j];
       }
+      generateHole(fullJoint[i], 3, 2, 1, 0.1, 0.1, holeConfigs[i]);
       if (checkEmptyBin(&bins, tempState) == 1) {
         num_bins++;
         numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
@@ -525,6 +526,107 @@ void BayesNet::estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx) {
   cout << endl;
 
 }
+
+void BayesNet::generateHole(jointCspace &joint, int right_datum, int top_datum, int plane, double holeOffset1, double holeOffset2, cspace &hole) {
+  Eigen::Vector3d pa1, pb1, pa2, pb2, ta, tb;
+  int datum1Start = right_datum * cdim;
+  int datum2Start = top_datum * cdim;
+  int planeStart = plane * cdim;
+
+  cspace baseConfig1 = {joint[datum1Start], joint[datum1Start + 1], joint[datum1Start + 2], joint[datum1Start + 3], joint[datum1Start + 4], joint[datum1Start + 5]};
+  cspace baseConfig2 = {joint[datum2Start], joint[datum2Start + 1], joint[datum2Start + 2], joint[datum2Start + 3], joint[datum2Start + 4], joint[datum2Start + 5]};
+
+  ta << 0, -0.025, 0;
+  tb << 0, -0.025, 0.23;
+  Transform(ta, baseConfig1, pa1);
+  Transform(tb, baseConfig1, pb1);
+  ta << 0, -0.025, 0.23;
+  tb << 1.2192, -0.025, 0.23;
+  Transform(ta, baseConfig2, pa2);
+  Transform(tb, baseConfig2, pb2);
+
+  cspace planeConfig;
+  for (int i = 0; i < cdim; i ++) {
+    planeConfig[i] = joint[planeStart + i];
+  }
+
+  Eigen::Vector3d pa1_prime, pb1_prime, pa2_prime, pb2_prime;
+  
+  inverseTransform(pa1, planeConfig, pa1_prime);
+  inverseTransform(pb1, planeConfig, pb1_prime);
+  inverseTransform(pa2, planeConfig, pa2_prime);
+  inverseTransform(pb2, planeConfig, pb2_prime);
+  Eigen::Vector3d normVec;
+  normVec << -(pb1_prime(2) - pa1_prime(2)), 0, -(pa1_prime(0) - pb1_prime(0));
+  normVec.normalize();
+  normVec *= (holeOffset1);
+  pa1_prime(0) += normVec(0);
+  pb1_prime(0) += normVec(0);
+  pa1_prime(1) = -0.025;
+  pb1_prime(1) = -0.025;
+  pa1_prime(2) += normVec(2);
+  pb1_prime(2) += normVec(2);
+
+  normVec << -(pb2_prime(2) - pa2_prime(2)), 0, -(pa2_prime(0) - pb2_prime(0));
+  normVec.normalize();
+  normVec *= (holeOffset2);
+  pa2_prime(0) += normVec(0);
+  pb2_prime(0) += normVec(0);
+  pa2_prime(1) = -0.025;
+  pb2_prime(1) = -0.025;
+  pa2_prime(2) += normVec(2);
+  pb2_prime(2) += normVec(2);
+
+  Eigen::Matrix2d divisor, dividend; 
+  divisor << pa1_prime(0) - pb1_prime(0), pa1_prime(2) - pb1_prime(2),
+             pa2_prime(0) - pb2_prime(0), pa2_prime(2) - pb2_prime(2);
+  dividend << pa1_prime(0)*pb1_prime(2) - pa1_prime(2)*pb1_prime(0), pa1_prime(0) - pb1_prime(0),
+              pa2_prime(0)*pb2_prime(2) - pa2_prime(2)*pb2_prime(0), pa2_prime(0) - pb2_prime(0);
+  Eigen::Vector3d pi_prime, pi, dir_prime, origin_prime, dir, origin;
+  pi_prime(0) = dividend.determinant() / divisor.determinant();
+  dividend << pa1_prime(0)*pb1_prime(2) - pa1_prime(2)*pb1_prime(0), pa1_prime(2) - pb1_prime(2),
+              pa2_prime(0)*pb2_prime(2) - pa2_prime(2)*pb2_prime(0), pa2_prime(2) - pb2_prime(2);
+  pi_prime(1) = -0.025;
+  pi_prime(2) = dividend.determinant() / divisor.determinant();
+  dir_prime << 0, 1, 0; origin_prime << 0, 0, 0;
+  Transform(pi_prime, planeConfig, pi);
+  Transform(dir_prime, planeConfig, dir);
+  Transform(origin_prime, planeConfig, origin);
+  dir -= origin;
+  hole[0] = pi(0);
+  hole[1] = pi(1);
+  hole[2] = pi(2);
+  hole[3] = dir(0);
+  hole[4] = dir(1);
+  hole[5] = dir(2);
+}
+
+
+void BayesNet::estimateHole(cspace &x_mean, cspace &x_est_stat) {
+  cout << "Estimated Mean: ";
+  for (int k = 0; k < cdim; k++) {
+    x_mean[k] = 0;
+    for (int j = 0; j < numParticles; j++) {
+      x_mean[k] += holeConfigs[j][k];
+    }
+    x_mean[k] /= numParticles;
+    cout << x_mean[k] << "  ";
+  }
+  cout << endl;
+  cout << "Estimated Std: ";
+  for (int k = 0; k < cdim; k++) {
+    x_est_stat[k] = 0;
+    for (int j = 0; j < numParticles; j++) {
+      x_est_stat[k] += SQ(holeConfigs[j][k] - x_mean[k]);
+    }
+    x_est_stat[k] = sqrt(x_est_stat[k] / numParticles);
+    cout << x_est_stat[k] << "  ";
+  }
+  cout << endl;
+
+}
+
+
 
 
 
@@ -620,7 +722,7 @@ void invTransFrameConfig(cspace baseConfig, cspace relativeConfig, cspace &absol
 }
 
 
-void transPointConfig(cspace baseConfig, cspace relativeConfig, cspace &absoluteConfig) {
+void transPointConfig(cspace &baseConfig, cspace &relativeConfig, cspace &absoluteConfig) {
   Eigen::Matrix4d baseTrans, relativeTrans, absoluteTrans;
   Eigen::Matrix3d rotationC, rotationB, rotationA;
   rotationC << cos(baseConfig[5]), -sin(baseConfig[5]), 0,
