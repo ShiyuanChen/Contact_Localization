@@ -399,8 +399,8 @@ int main(int argc, char **argv)
 
   int i = 0;
   //for(int i=0; i<20; i++){
-  while (i < 10) {
-    ros::Duration(2).sleep();
+  while (i < 20) {
+    ros::Duration(1).sleep();
     //tf::Point start(0.95,0,-0.15);
     //tf::Point end(0.95,2,-0.15);
     tf::Point start, end;

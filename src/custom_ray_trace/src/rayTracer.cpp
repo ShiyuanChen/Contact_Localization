@@ -56,6 +56,22 @@ ParticleHandler::ParticleHandler()
   requestParticlesPub = rosnode.advertise<std_msgs::Empty>("/request_particles", 5);
 }
 
+ParticleHandler::ParticleHandler(std::string datumName)
+{
+  std::string cadName;
+  if(!rosnode.getParam("localization_object", cadName)){
+    ROS_INFO("Failed to get param: localization_object");
+  }
+  particlesInitialized = false;
+  newParticles = true;
+  tf_listener_.waitForTransform("/my_frame", "/true_frame", ros::Time(0), ros::Duration(10.0));
+  tf_listener_.lookupTransform("/true_frame", "/my_frame", ros::Time(0), trans_);
+  particleSub = rosnode.subscribe("/" + datumName + "/particles_from_filter", 1000, 
+             &ParticleHandler::setParticles, this);
+  requestParticlesPub = rosnode.advertise<std_msgs::Empty>("/request_particles", 5);
+}
+
+
 tf::StampedTransform ParticleHandler::getTransformToPartFrame()
 {
   //TODO: Update when new transform becomes available
@@ -166,7 +182,7 @@ RayTracer::RayTracer()
   loadMesh();
 }
 
-RayTracer::RayTracer(std::string filename) 
+RayTracer::RayTracer(std::string filename): particleHandler(filename)
 {
   loadMesh(filename);
 }

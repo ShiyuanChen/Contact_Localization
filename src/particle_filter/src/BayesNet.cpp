@@ -134,20 +134,20 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     // Top Plane
     relativeConfig[0] = 0 + dist(rd) * 0.001;
     relativeConfig[1] = 0 + dist(rd) * 0.001;
-    relativeConfig[2] = 0 + dist(rd) * 0.001;
+    relativeConfig[2] = 0.01 + dist(rd) * 0.01;
     relativeConfig[3] = 0;
-    relativeConfig[4] = 0;
+    relativeConfig[4] = 0.01 + dist(rd) * 0.05;
     relativeConfig[5] = 0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
     copyParticles(topPlaneConfig, fullJointPrev[i], 2 * cdim);
 
     // Right Plane
-    relativeConfig[0] = 0 + dist(rd) * 0.001;
+    relativeConfig[0] = -0.005 + dist(rd) * 0.01;
     relativeConfig[1] = 0;
     relativeConfig[2] = 0;
     relativeConfig[3] = 0;
-    relativeConfig[4] = 0;
+    relativeConfig[4] = -0.01 + dist(rd) * 0.02;
     relativeConfig[5] = 0;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, rightPlaneConfig);
@@ -500,7 +500,6 @@ void BayesNet::getAllParticles(Particles &particles_dest, int idx)
       particles_dest[j][k] = fullJoint[j][k + idx * cdim];
     }
   }
-  cout << "finish get Particles" << endl;
 }
 
 void BayesNet::estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx) {
@@ -557,7 +556,7 @@ void BayesNet::generateHole(jointCspace &joint, int right_datum, int top_datum, 
   inverseTransform(pa2, planeConfig, pa2_prime);
   inverseTransform(pb2, planeConfig, pb2_prime);
   Eigen::Vector3d normVec;
-  normVec << -(pb1_prime(2) - pa1_prime(2)), 0, -(pa1_prime(0) - pb1_prime(0));
+  normVec << (pb1_prime(2) - pa1_prime(2)), 0, (pa1_prime(0) - pb1_prime(0));
   normVec.normalize();
   normVec *= (holeOffset1);
   pa1_prime(0) += normVec(0);
@@ -567,7 +566,7 @@ void BayesNet::generateHole(jointCspace &joint, int right_datum, int top_datum, 
   pa1_prime(2) += normVec(2);
   pb1_prime(2) += normVec(2);
 
-  normVec << -(pb2_prime(2) - pa2_prime(2)), 0, -(pa2_prime(0) - pb2_prime(0));
+  normVec << (pb2_prime(2) - pa2_prime(2)), 0, (pa2_prime(0) - pb2_prime(0));
   normVec.normalize();
   normVec *= (holeOffset2);
   pa2_prime(0) += normVec(0);

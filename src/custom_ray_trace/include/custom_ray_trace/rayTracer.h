@@ -32,6 +32,7 @@ class ParticleHandler
 
  public:
   ParticleHandler();
+  ParticleHandler(std::string datumNames);
   tf::TransformListener tf_listener_;
   tf::StampedTransform trans_;
   std::vector<tf::Transform> particles;
