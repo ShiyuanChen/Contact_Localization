@@ -73,7 +73,7 @@ ShapePlotter::ShapePlotter()
  */
 void ShapePlotter::externalParticleUpdate(geometry_msgs::PoseArray p)
 {
-  ROS_INFO("Particles Updated");
+  // ROS_INFO("Particles Updated");
   particles_ = p;
   updateMarkers();
   plotParticles();
