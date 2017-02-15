@@ -135,7 +135,7 @@ void particleFilter::getAllParticles(Particles &particles_dest, int idx)
 void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss, int datum)
 {
 	// cspace trueConfig = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
-	cspace trueConfig = {1.22, -0.025, 0, 0, 0, Pi};
+	cspace trueConfig = {0, 0, 0, 0, 0, 0};
   cout << "Xstd_Ob: " << Xstd_ob << endl;
   auto timer_begin = std::chrono::high_resolution_clock::now();
   std::random_device generator;

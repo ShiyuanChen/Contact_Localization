@@ -294,7 +294,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   
   int datum = 0;
   string meshFile;
-  for(int i=0; i<100; i++){
+  for(int i=0; i<200; i++){
     index = int_rand(rd);
     if (index == 0) {
       double x = rand(rd) * 0.9 + 0.1;
@@ -305,21 +305,21 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
       meshFile = "front_datum";
     } else if (index == 1) {
       double y = rand(rd) * 0.035 - 0.06;
-      double z = rand(rd) * 0.18 + 0.03;
+      double z = rand(rd) * 0.21 + 0.01;
       start << -1, y, z;
       end << 0.5, y, z;
       datum = 3;
       meshFile = "right_datum";
     } else if (index == 2) {
       double y = rand(rd) * 0.035 - 0.06;
-      double z = rand(rd) * 0.18 + 0.03;
+      double z = rand(rd) * 0.21 + 0.01;
       start << 2, y, z;
       end << 0.5, y, z;
       datum = 4;
       meshFile = "left_datum";
     } else {
-      double x = rand(rd) * 0.9 + 0.1;
-      double y = rand(rd) * 0.035 - 0.06;
+      double x = rand(rd) * 1.19 + 0.01;
+      double y = rand(rd) * 0.058 - 0.06;
       start << x, y, 1;
       end << x, y, -1;
       datum = 2;
