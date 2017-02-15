@@ -44,6 +44,7 @@ private:
   // ros::Publisher pub_particles1;
   // ros::Publisher pub_particles2;
   std::vector<ros::Publisher> pub_particles_vec;
+  ros::Publisher pub_hole;
   std::vector<int> datum_idx_vec;
   tf::StampedTransform trans_;
   tf::StampedTransform trans1_;
@@ -58,6 +59,7 @@ public:
   vector<vec4x3> mesh;
   int num_voxels[3];
   geometry_msgs::PoseArray getParticlePoseArray(int idx);
+  geometry_msgs::PoseArray getHoleParticlePoseArray();
   particleFilter pFilter_;
   PFilterTest(int n_particles, cspace b_init[2]);
   // void addObs(geometry_msgs::Point obs);
@@ -137,6 +139,7 @@ tf::Pose poseAt(cspace particle_pose)
 void PFilterTest::sendParticles(std_msgs::Empty emptyMsg)
 {
   pub_particles.publish(getParticlePoseArray(0));
+  pub_hole.publish(getHoleParticlePoseArray());
   int size = pub_particles_vec.size();
   for (int i = 0; i < size; i ++) {
     pub_particles_vec[i].publish(getParticlePoseArray(datum_idx_vec[i]));
@@ -170,6 +173,7 @@ bool PFilterTest::addObs(particle_filter::AddObservation::Request &req,
   for (int i = 0; i < size; i ++) {
     pub_particles_vec[i].publish(getParticlePoseArray(datum_idx_vec[i]));
   }
+  pub_hole.publish(getHoleParticlePoseArray());
   // pub_particles1.publish(getParticlePoseArray(5));
   // pub_particles2.publish(getParticlePoseArray(6));
   return true;
@@ -182,7 +186,28 @@ bool PFilterTest::getMesh(std::string stlFilePath, vector<vec4x3> &datumMesh){
 
 
 
+geometry_msgs::PoseArray PFilterTest::getHoleParticlePoseArray()
+{
+  std::vector<cspace> particles;
+  pFilter_.getHoleParticles(particles);
+  // tf::Transform trans = pHandler.getTransformToPartFrame();
+  tf::Transform trans = trans_;
+  // cspace particles_est_stat;
+  // cspace particles_est;
+  // pFilter_.estimateGaussian(particles_est, particles_est_stat);
+  geometry_msgs::PoseArray poseArray;
+  for(int i=0; i<50; i++){
+    tf::Pose pose = poseAt(particles[i]);
+    geometry_msgs::Pose pose_msg;
+    tf::poseTFToMsg(trans*pose, pose_msg);
+    poseArray.poses.push_back(pose_msg);
+    // ROS_INFO("Pose %d: %f, %f, %f", i, poseArray.poses[i].position.x,
+    //       poseArray.poses[i].position.y, 
+    //       poseArray.poses[i].position.z);
 
+  }
+  return poseArray;
+}
 
 geometry_msgs::PoseArray PFilterTest::getParticlePoseArray(int idx)
 {
@@ -301,7 +326,7 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
   pub_particles = n.advertise<geometry_msgs::PoseArray>("/wood_boeing/particles_from_filter", 5);
   // pub_particles1 = n.advertise<geometry_msgs::PoseArray>("/right_datum/particles_from_filter", 5);
   // pub_particles2 = n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5);
-
+  pub_hole = n.advertise<geometry_msgs::PoseArray>("/hole/particles_from_filter", 5);
   pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/right_datum/particles_from_filter", 5));
   datum_idx_vec.push_back(3);
   pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5));
@@ -365,6 +390,7 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
   #endif
   ros::Duration(1.0).sleep();
   pub_particles.publish(getParticlePoseArray(0));
+  pub_hole.publish(getHoleParticlePoseArray());
   int size = pub_particles_vec.size();
   for (int i = 0; i < size; i ++) {
     pub_particles_vec[i].publish(getParticlePoseArray(datum_idx_vec[i]));

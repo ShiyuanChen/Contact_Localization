@@ -86,7 +86,9 @@ particleFilter::particleFilter(int n_particles, cspace b_init[2],
 // 	// }
 // }
 
-
+void particleFilter::getHoleParticles(Particles &particles_dest) {
+  bayesNet.getHoleParticles(particles_dest);
+}
 
 void particleFilter::getAllParticles(Particles &particles_dest)
 {

@@ -57,6 +57,10 @@
     <arg name="pieceName" value="front_datum"/> 
   </include>
 
+  <include file="$(find touch_optimization)/launch/piece.launch"> 
+    <arg name="pieceName" value="hole"/> 
+  </include>
+
   <include file="$(find particle_filter)/launch/pfilterBoeing.launch"/>
 
 <!-- Gazebo ray tracing service used to calculate values of a touch -->

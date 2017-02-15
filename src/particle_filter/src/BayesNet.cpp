@@ -178,7 +178,7 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
 
 
     // Hole 
-
+    generateHole(fullJointPrev[i], 3, 2, 1, 0.1, 0.1, holeConfigs[i]);
 
   }
   fullJoint = fullJointPrev;
@@ -501,6 +501,10 @@ void BayesNet::getAllParticles(Particles &particles_dest, int idx)
     }
   }
 }
+void BayesNet::getHoleParticles(Particles &particles_dest) {
+  particles_dest.resize(numParticles);
+  particles_dest = holeConfigs;
+}
 
 void BayesNet::estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx) {
   cout << "Estimated Mean: ";
@@ -592,12 +596,19 @@ void BayesNet::generateHole(jointCspace &joint, int right_datum, int top_datum, 
   Transform(dir_prime, planeConfig, dir);
   Transform(origin_prime, planeConfig, origin);
   dir -= origin;
-  hole[0] = pi(0);
-  hole[1] = pi(1);
-  hole[2] = pi(2);
-  hole[3] = dir(0);
-  hole[4] = dir(1);
-  hole[5] = dir(2);
+  hole[0] = pi(0) - holeOffset1;
+  hole[1] = pi(1) - ta(1);
+  hole[2] = pi(2) - ta(2) + holeOffset1;
+  // hole[3] = dir(0);
+  // hole[4] = dir(1);
+  // hole[5] = dir(2);
+  // hole[3] = asin(dir[2] / sqrt(dir[1] * dir[1] + dir[2] * dir[2]));
+  // hole[4] = asin(-dir[2] / sqrt(dir[0] * dir[0] + dir[2] * dir[2]));
+  // hole[5] = asin(dir[2] / sqrt(dir[0] * dir[0] + dir[2] * dir[2]));
+  hole[3] = planeConfig[3];
+  hole[4] = planeConfig[4];
+  hole[5] = planeConfig[5];
+  // std::cout << hole[3] << " " << hole[4] << " " << hole[5] << std::endl;
 }
 
 

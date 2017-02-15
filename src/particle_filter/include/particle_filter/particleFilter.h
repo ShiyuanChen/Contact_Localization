@@ -26,6 +26,7 @@ class particleFilter
   void estimateGaussian(cspace &x_mean, cspace &x_est_stat);
   void getAllParticles(Particles &particles_dest);
   void getAllParticles(Particles &particles_dest, int idx);
+  void getHoleParticles(Particles &particles_dest);
   int getNumParticles();
 
  protected:

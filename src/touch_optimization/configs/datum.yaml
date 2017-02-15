@@ -45,3 +45,12 @@ front_datum:
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]
+
+hole:
+  color: [0, 1, 0, 0.8]
+  localization_object: hole
+  # localization_object_cad: package://custom_ray_trace/sdf/top_datum.stl
+  # localization_object_filepath: package://custom_ray_trace/sdf/top_datum.stl 
+  particle_frame: [0, 0, 0, 0, 0, 0]
+  true_frame: [0, 0, 0, 0, 0, 0]
+  true_state: [0, 0, 0, 0, 0, 0]

@@ -32,6 +32,7 @@ public:
   void estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx);
   void estimateHole(cspace &x_mean, cspace &x_est_stat);
   void getAllParticles(Particles &particles_dest, int idx);
+  void getHoleParticles(Particles &particles_dest);
   void buildDistTransform(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, int nodeidx);
   void generateHole(jointCspace &joint, int right_datum, int top_datum, int plane, double holeOffset1, double holeOffset2, cspace &hole);
   // vector<cspace> priorSample();
