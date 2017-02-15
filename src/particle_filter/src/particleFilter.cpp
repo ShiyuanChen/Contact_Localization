@@ -45,8 +45,7 @@ particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
   b_Xprior[0] = b_init[0];
   b_Xprior[1] = b_init[1];
   bayesNet.addRoot(numParticles, b_Xprior, Xstd_ob);
-  // root = new Node(numParticles, b_Xprior);
-  // root->addDatum
+
   // particles.resize(numParticles);
   // particlesPrev.resize(numParticles);
 
@@ -62,29 +61,6 @@ particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
   //W = new double[numParticles];
 }
 
-
-// Node* particleFilter::addDatum(std::vector<Node*> node, std::vector<double[3]> offset, std::vector<double[3]> tol)
-// {
-// 	// int n = node.size();
-// 	// for (int i = 0; i < n; i ++) {
-// 	// 	Node* nodeptr = node[i];
-// 	// 	Parent *parent = new Parent(nodeptr, )
-// 	// }
-// }
-
-// Node* particleFilter::addInitialDatum()
-// {
-// 	// Parent *parent = new Parent(bayesNet.node[0], 0, 0);
-// 	// std::vector<Parent *> p;
-// 	// p.push_back(parent);
-// 	// bayesNet.node[0]->child.push_back(new Node(numParticles, p, 1));
-
-// 	// int n = node.size();
-// 	// for (int i = 0; i < n; i ++) {
-// 	// 	Node* nodeptr = node[i];
-// 	// 	Parent *parent = new Parent(nodeptr, )
-// 	// }
-// }
 
 void particleFilter::getHoleParticles(Particles &particles_dest) {
   bayesNet.getHoleParticles(particles_dest);
