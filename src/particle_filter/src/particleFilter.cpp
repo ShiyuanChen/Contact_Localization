@@ -37,7 +37,7 @@ const int particleFilter::cdim = 6;
  *        R: radius of the touch probe
  * output: none
  */
-particleFilter::particleFilter(int n_particles, cspace b_init[2],
+particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
 							   double Xstd_ob, double R)
   : numParticles(n_particles), maxNumParticles(n_particles), 
     Xstd_ob(Xstd_ob), R(R)

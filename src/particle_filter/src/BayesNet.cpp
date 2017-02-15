@@ -24,7 +24,7 @@ BayesNet::BayesNet()
 {
 }
 
-void BayesNet::addRoot(int n_particles, cspace b_init[2], double Xstdob)
+void BayesNet::addRoot(int n_particles, jointCspace b_init[2], double Xstdob)
 {
   // Node *root = new Node(numParticles, b_init);
   // node.push_back(root);
@@ -51,33 +51,26 @@ void BayesNet::addRoot(int n_particles, cspace b_init[2], double Xstdob)
   // }
 }
 
-void BayesNet::createFullJoint(cspace b_Xprior[2]) {
+void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
   
   std::random_device rd;
   std::normal_distribution<double> dist(0, 1);
   cspace tmpConfig;
   for (int i = 0; i < numParticles; i ++) {
+    int pt = 0;
     // Root
     for (int j = 0; j < cdim; j++) {
-      fullJointPrev[i][j] = b_Xprior[0][j] + b_Xprior[1][j] * (dist(rd));
+      fullJointPrev[i][j] = b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
       tmpConfig[j] = fullJointPrev[i][j];
     }
 
     // Front Plane
     cspace relativeConfig, baseConfig, transformedConfig, edgeConfig;
     cspace frontPlaneConfig, rightPlaneConfig, leftPlaneConfig, topPlaneConfig;
-    // relativeConfig[0] = 1.2192 + dist(rd) * 0.001;
-    // relativeConfig[1] = -0.025 + dist(rd) * 0.001;
-    // relativeConfig[2] = 0.014 + dist(rd) * 0.001;
-    // relativeConfig[3] = 0 + dist(rd) * 0.01;
-    // relativeConfig[4] = 0 + dist(rd) * 0.01;
-    // relativeConfig[5] = Pi + dist(rd) * 0.01;
-    relativeConfig[0] = 0;
-    relativeConfig[1] = 0 + dist(rd) * 0.001;
-    relativeConfig[2] = 0;
-    relativeConfig[3] = 0 + dist(rd) * 0.001;
-    relativeConfig[4] = 0;
-    relativeConfig[5] = 0 + dist(rd) * 0.001;
+
+    for (int j = 0; j < cdim; j ++) {
+      relativeConfig[j] = b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
+    }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, frontPlaneConfig);
     //TEMP:
@@ -132,35 +125,25 @@ void BayesNet::createFullJoint(cspace b_Xprior[2]) {
     // fullJointPrev[i][29] = pb(2);
 
     // Top Plane
-    relativeConfig[0] = 0 + dist(rd) * 0.001;
-    relativeConfig[1] = 0 + dist(rd) * 0.001;
-    relativeConfig[2] = 0.01 + dist(rd) * 0.01;
-    relativeConfig[3] = 0;
-    relativeConfig[4] = 0.01 + dist(rd) * 0.05;
-    relativeConfig[5] = 0;
+    for (int j = 0; j < cdim; j ++) {
+      relativeConfig[j] = b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
+    }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
     copyParticles(topPlaneConfig, fullJointPrev[i], 2 * cdim);
 
     // Right Plane
-    relativeConfig[0] = -0.005 + dist(rd) * 0.01;
-    relativeConfig[1] = 0;
-    relativeConfig[2] = 0;
-    relativeConfig[3] = 0;
-    relativeConfig[4] = -0.01 + dist(rd) * 0.02;
-    relativeConfig[5] = 0;
+    for (int j = 0; j < cdim; j ++) {
+      relativeConfig[j] = b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
+    }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, rightPlaneConfig);
     copyParticles(rightPlaneConfig, fullJointPrev[i], 3 * cdim);
 
     // Left Plane
-    relativeConfig[0] = 0 + dist(rd) * 0.01;
-    // relativeConfig[0] = 1.2192;
-    relativeConfig[1] = 0;
-    relativeConfig[2] = 0;
-    relativeConfig[3] = 0;
-    relativeConfig[4] = 0;
-    relativeConfig[5] = 0;
+    for (int j = 0; j < cdim; j ++) {
+      relativeConfig[j] = b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
+    }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
     copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);

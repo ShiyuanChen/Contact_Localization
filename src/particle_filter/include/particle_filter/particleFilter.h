@@ -18,7 +18,7 @@ class particleFilter
   int numParticles; // number of particles
   int maxNumParticles;
 
-  particleFilter (int n_particles, cspace b_init[2], 
+  particleFilter (int n_particles, jointCspace b_init[2], 
 				double Xstd_ob=0.0001, double R=0.01);
 
   void addObservation (double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss, int datum);
@@ -38,7 +38,7 @@ class particleFilter
   // Node *root;
   BayesNet bayesNet;
   // internal variables
-  cspace b_Xprior[2]; // Initial distribution (mean and variance)
+  jointCspace b_Xprior[2]; // Initial distribution (mean and variance)
   //cspace b_Xpre[2];   // Previous (estimated) distribution (mean and variance)
   // Particles particles;  // Current set of particles
   // Particles particlesPrev; // Previous set of particles

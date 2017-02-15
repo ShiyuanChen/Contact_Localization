@@ -1,6 +1,7 @@
 wood_boeing:
   color: [0.6, 0.6, 0.65, 0.01]
-  initial_uncertainties: [0.01, 0.01, 0.01, 0.0001, 0.0001, 0.0001]
+  prior: [0, 0, 0, 0, 0, 0]
+  initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   localization_object: wood_boeing
   # localization_object_cad: package://custom_ray_trace/sdf/wood_boeing.stl
   # localization_object_filepath: ($find custom_ray_trace)/sdf/wood_boeing.stl 
@@ -8,49 +9,43 @@ wood_boeing:
 
 right_datum:
   color: [0, 0, 1, 0.2]
-  initial_uncertainties: [0.01, 0.0001, 0.01, 0.0001, 0.0001, 0.0001]
+  prior: [0.02, 0, 0, 0, 0, 0]
+  initial_uncertainties: [0.02, 0.0, 0.0, 0.0, 0.02, 0.02]
   localization_object: right_datum
-  # localization_object_cad: package://custom_ray_trace/sdf/right_datum.stl
-  # localization_object_filepath: package://custom_ray_trace/sdf/right_datum.stl # 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]
 
 left_datum:
   color: [0.5, 0.5, 0, 0.2]
-  initial_uncertainties: [0.01, 0.0001, 0.01, 0.0001, 0.0001, 0.0001]
+  prior: [0, 0, 0, 0, 0, 0]
+  initial_uncertainties: [0.01, 0.0001, 0.0, 0.0001, 0.0001, 0.0001]
   localization_object: left_datum
-  # localization_object_cad: package://custom_ray_trace/sdf/top_datum.stl
-  # localization_object_filepath: package://custom_ray_trace/sdf/top_datum.stl 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]
 
 top_datum:
   color: [0.5, 0, 0.5, 0.2]
-  initial_uncertainties: [0.01, 0.0001, 0.01, 0.0001, 0.0001, 0.0001]
+  prior: [0, 0, 0.01, 0, 0, 0]
+  initial_uncertainties: [0.0, 0.0, 0.02, 0.02, 0.02, 0.0]
   localization_object: top_datum
-  # localization_object_cad: package://custom_ray_trace/sdf/top_datum.stl
-  # localization_object_filepath: package://custom_ray_trace/sdf/top_datum.stl 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]
   
 front_datum:
   color: [0, 0.5, 0.5, 0.2]
-  initial_uncertainties: [0.01, 0.0001, 0.01, 0.0001, 0.0001, 0.0001]
+  prior: [0, -0.01, 0, 0, 0, 0]
+  initial_uncertainties: [0.0, 0.02, 0.0, 0.0, 0.0, 0.0]
   localization_object: front_datum
-  # localization_object_cad: package://custom_ray_trace/sdf/top_datum.stl
-  # localization_object_filepath: package://custom_ray_trace/sdf/top_datum.stl 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]
 
 hole:
-  color: [0, 1, 0, 0.8]
+  color: [0, 1, 0, 0.5]
   localization_object: hole
-  # localization_object_cad: package://custom_ray_trace/sdf/top_datum.stl
-  # localization_object_filepath: package://custom_ray_trace/sdf/top_datum.stl 
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]

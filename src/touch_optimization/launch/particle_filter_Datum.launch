@@ -30,7 +30,7 @@
 
   <rosparam param="particle_frame">
     <!-- [0.3, 0.3, 0.3, 0.5, 0.7, 0.5]-->
-    [0.01, 0, 0, 0, 0, 0]
+    [0, 0, 0, 0, 0, 0]
   </rosparam>
   
   <rosparam param="true_frame">

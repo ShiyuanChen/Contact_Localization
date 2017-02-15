@@ -25,8 +25,8 @@ public:
   int numFullJoint;
   int numNode;
   BayesNet();
-  void addRoot(int numParticles, cspace b_init[2], double Xstd_ob);
-  void createFullJoint(cspace b_Xprior[2]);
+  void addRoot(int numParticles, jointCspace b_init[2], double Xstd_ob);
+  void createFullJoint(jointCspace b_Xprior[2]);
   bool updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int idx);
   bool updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, double Xstd_ob, double R, int idx);
   void estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx);

@@ -41,11 +41,13 @@ private:
   ros::Subscriber sub_request_particles;
   ros::ServiceServer srv_add_obs;
   ros::Publisher pub_particles;
-  // ros::Publisher pub_particles1;
-  // ros::Publisher pub_particles2;
+
+  std::vector<std::string> datum_name_vec;
+  std::vector<int> datum_idx_vec;
   std::vector<ros::Publisher> pub_particles_vec;
   ros::Publisher pub_hole;
-  std::vector<int> datum_idx_vec;
+
+
   tf::StampedTransform trans_;
   tf::StampedTransform trans1_;
   std::string cadName;
@@ -61,51 +63,34 @@ public:
   geometry_msgs::PoseArray getParticlePoseArray(int idx);
   geometry_msgs::PoseArray getHoleParticlePoseArray();
   particleFilter pFilter_;
-  PFilterTest(int n_particles, cspace b_init[2]);
+  PFilterTest(int n_particles, jointCspace b_init[2], std::vector<std::string> datum_name_vec);
   // void addObs(geometry_msgs::Point obs);
   bool addObs(particle_filter::AddObservation::Request &req,
 	      particle_filter::AddObservation::Response &resp);
   void sendParticles(std_msgs::Empty);
 };
 
-void computeInitialDistribution(cspace binit[2], ros::NodeHandle n)
+void computeInitialDistribution(jointCspace binit[2], std::vector<std::string> datum_name_vec, ros::NodeHandle n)
 {
 
   std::vector<double> uncertainties;
-  if(!n.getParam("/initial_uncertainties", uncertainties)){
-    ROS_INFO("Failed to get param");
-    uncertainties.resize(6);
-  }
-
   std::vector<double> pFrame;
-  if(!n.getParam("/particle_frame", pFrame)){
-    ROS_INFO("Failed to get param particle_frame");
-    pFrame.resize(6);
+  for (int i = 0; i < datum_name_vec.size(); i ++) {
+    if(!n.getParam("/" + datum_name_vec[i] + "/initial_uncertainties", uncertainties)){
+      ROS_INFO("Failed to get param");
+      uncertainties.resize(6);
+    }
+
+    
+    if(!n.getParam("/" + datum_name_vec[i] + "/prior", pFrame)){
+      ROS_INFO("Failed to get param particle_frame");
+      pFrame.resize(6);
+    }
+    for (int j = 0; j < CDIM; j ++) {
+      binit[0][j + i * CDIM] = pFrame[j];
+      binit[1][j + i * CDIM] = uncertainties[j];
+    }
   }
-
-
-  binit[0][0] = pFrame[0];
-  binit[0][1] = pFrame[1];
-  binit[0][2] = pFrame[2];
-  binit[0][3] = pFrame[3];
-  binit[0][4] = pFrame[4];
-  binit[0][5] = pFrame[5];
-
-  binit[1][0] = uncertainties[0];
-  binit[1][1] = uncertainties[1];
-  binit[1][2] = uncertainties[2];
-
-  // binit[1][0] = 0.00;
-  // binit[1][1] = 0.00;
-  // binit[1][2] = 0.00;
-
-  binit[1][3] = uncertainties[3];
-  binit[1][4] = uncertainties[4];
-  binit[1][5] = uncertainties[5];
-
-  // binit[1][3] = 0;
-  // binit[1][4] = 0;
-  // binit[1][5] = 0;
 
 }
 
@@ -302,7 +287,7 @@ void visualize()
 }
 #endif
 
-PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
+PFilterTest::PFilterTest(int n_particles, jointCspace b_init[2], std::vector<std::string> datum_name_vec) :
   pFilter_(n_particles, b_init, 0.0005, 0.000),
   num_voxels{200, 200, 200}//,
   // pFilter_(n_particles, b_init, 0.001, 0.0025, 0.0001, 0.00),
@@ -317,6 +302,7 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
 
 
 {
+  this->datum_name_vec = datum_name_vec;
   if(!n.getParam("localization_object", cadName)){
     ROS_INFO("Failed to get param: localization_object");
   }
@@ -327,15 +313,12 @@ PFilterTest::PFilterTest(int n_particles, cspace b_init[2]) :
   // pub_particles1 = n.advertise<geometry_msgs::PoseArray>("/right_datum/particles_from_filter", 5);
   // pub_particles2 = n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5);
   pub_hole = n.advertise<geometry_msgs::PoseArray>("/hole/particles_from_filter", 5);
-  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/right_datum/particles_from_filter", 5));
-  datum_idx_vec.push_back(3);
-  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5));
-  datum_idx_vec.push_back(4);
-  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/front_datum/particles_from_filter", 5));
-  datum_idx_vec.push_back(1);
-  pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/top_datum/particles_from_filter", 5));
-  datum_idx_vec.push_back(2);
+  for (int i = 1; i < datum_name_vec.size(); i ++) {
+    pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/" + datum_name_vec[i] + "/particles_from_filter", 5));
+    datum_idx_vec.push_back(i);
 
+  }
+  
   ROS_INFO("Loading Boeing Particle Filter");
 
   if(!n.getParam("/localization_object_dir", stlFileDir)){
@@ -413,9 +396,12 @@ int main(int argc, char **argv)
 
   ROS_INFO("Testing particle filter");
   
-  cspace b_Xprior[2];	
-  computeInitialDistribution(b_Xprior, n);
-  PFilterTest pFilterTest(NUM_PARTICLES, b_Xprior);
+  std::vector<std::string> datum_name_vec = {"wood_boeing", "front_datum", "top_datum", "right_datum", "left_datum"};
+  // std::string names[] = {"wood_boeing", "front_datum", "top_datum", "right_datum", "left_datum"};
+  // datum_name_vec.assign(names, names + 5);
+  jointCspace b_Xprior[2];	
+  computeInitialDistribution(b_Xprior, datum_name_vec, n);
+  PFilterTest pFilterTest(NUM_PARTICLES, b_Xprior, datum_name_vec);
   
   ros::spin();
   #ifdef POINT_CLOUD
