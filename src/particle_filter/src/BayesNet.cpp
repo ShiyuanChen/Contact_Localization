@@ -26,13 +26,6 @@ BayesNet::BayesNet()
 
 void BayesNet::addRoot(int n_particles, jointCspace b_init[2], double Xstdob)
 {
-  // Node *root = new Node(numParticles, b_init);
-  // node.push_back(root);
-  // node.push_back(root->child[0]);
-  // node.push_back(root->child[1]);
-  // node.push_back(root->child[2]);
-  // node.push_back(root->child[0]->child[0]);
-  // numNode = node.size();
   Xstd_ob = Xstdob;
   numParticles = n_particles;
   maxNumParticles = numParticles;
@@ -40,15 +33,6 @@ void BayesNet::addRoot(int n_particles, jointCspace b_init[2], double Xstdob)
   fullJointPrev.resize(numParticles);
   holeConfigs.resize(numParticles);
   createFullJoint(b_init);
-
-  // for (int i = 0; i < numNode; i ++) {
-  //   Node *cur = node[i];
-  //   for (int j = 0; j < numParticles; j ++) {
-  //     for (int k = 0; k < 6) {
-  //       fullJoint[j][i * 6 + k] = cur->particles[j][k];
-  //     }
-  //   }
-  // }
 }
 
 void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
@@ -73,56 +57,7 @@ void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, frontPlaneConfig);
-    //TEMP:
-    // if (frontPlaneConfig[5] < 0)  frontPlaneConfig[5] += 2 * Pi;
     copyParticles(frontPlaneConfig, fullJointPrev[i], cdim);
-
-    // // Bottom Edge
-    // cspace prior1[2] = {{0,0,0,1.22,0,0},{0,0,0,0.0005,0.0005,0.0005}};
-    // for (int j = 0; j < cdim; j++) {
-    //   relativeConfig[j] = prior1[0][j] + prior1[1][j] * (dist(rd));
-    // }
-    // baseConfig = tmpConfig;
-    // transPointConfig(baseConfig, relativeConfig, edgeConfig);
-    // copyParticles(edgeConfig, fullJointPrev[i], 2 * cdim);
-
-    // // Side Edge
-    // cspace prior2[2] = {{0,-0.025,0,0,-0.025,0.23},{0,0,0,0.0005,0.0005,0.0005}};
-    // for (int j = 0; j < cdim; j++) {
-    //   relativeConfig[j] = prior2[0][j] + prior2[1][j] * (dist(rd));
-    // }
-    // baseConfig = tmpConfig;
-    // transPointConfig(baseConfig, relativeConfig, transformedConfig);
-    // copyParticles(transformedConfig, fullJointPrev[i], 3 * cdim);
-
-    // // Top edge
-    // double edgeTol = 0.001;
-    // double edgeOffSet = 0.23;
-    // Eigen::Vector3d pa, pb; 
-    // pa << edgeConfig[0], edgeConfig[1], edgeConfig[2];
-    // pb << edgeConfig[3], edgeConfig[4], edgeConfig[5];
-    // Eigen::Vector3d pa_prime, pb_prime;
-    // inverseTransform(pa, frontPlaneConfig, pa_prime);
-    // inverseTransform(pb, frontPlaneConfig, pb_prime);
-    // double td = dist(rd) * edgeTol;
-    // // pa_prime(1) = 0;
-    // // pb_prime(1) = 0;
-    // Eigen::Vector3d normVec;
-    // normVec << (pb_prime(2) - pa_prime(2)), 0, (pa_prime(0) - pb_prime(0));
-    // normVec.normalize();
-    // normVec *= (edgeOffSet + td);
-    // pa_prime(0) += normVec(0);
-    // pb_prime(0) += normVec(0);
-    // pa_prime(2) += normVec(2);
-    // pb_prime(2) += normVec(2);
-    // Transform(pa_prime, frontPlaneConfig, pa);
-    // Transform(pb_prime, frontPlaneConfig, pb);
-    // fullJointPrev[i][24] = pa(0);
-    // fullJointPrev[i][25] = pa(1);
-    // fullJointPrev[i][26] = pa(2);
-    // fullJointPrev[i][27] = pb(0);
-    // fullJointPrev[i][28] = pb(1);
-    // fullJointPrev[i][29] = pb(2);
 
     // Top Plane
     for (int j = 0; j < cdim; j ++) {
@@ -148,18 +83,6 @@ void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
     copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);
 
-    // // Top Plane
-    // relativeConfig[0] = 0 + dist(rd) * 0.001;
-    // relativeConfig[1] = -0.063 + dist(rd) * 0.001;
-    // relativeConfig[2] = 0.23 + dist(rd) * 0.001;
-    // relativeConfig[3] = -1.570796 + dist(rd) * 0.01;
-    // relativeConfig[4] = 0 + dist(rd) * 0.01;
-    // relativeConfig[5] = 0 + dist(rd) * 0.01;
-    // baseConfig = tmpConfig;
-    // transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
-    // copyParticles(topPlaneConfig, fullJointPrev[i], 7 * cdim);
-
-
     // Hole 
     generateHole(fullJointPrev[i], 3, 2, 1, 0.1, 0.1, holeConfigs[i]);
 
@@ -169,142 +92,7 @@ void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
   Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
   cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
 }
-// vector<cspace> BayesNet::priorSample() 
-// {
-//   vector<cspace> sample;
-//   sample.resize(numNode);
 
-// }
-
-bool BayesNet::updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int nodeidx) {
-  cout << "Start updating!" << endl;
-  std::unordered_set<string> bins;
-  std::random_device rd;
-  std::normal_distribution<double> dist(0, 1);
-  std::uniform_real_distribution<double> distribution(0, numParticles);
-  int i = 0;
-  int count = 0;
-  int count2 = 0;
-  int count3 = 0;
-  bool iffar = false;
-  FullJoint b_X = fullJointPrev;
-  int idx = 0;
-  jointCspace tempFullState;
-  cspace tempState;
-  double D;
-  double cur_inv_M[2][3];
-  
-  double unsigned_dist_check = R + 1 * Xstd_ob;
-  double signed_dist_check = 1 * Xstd_ob;
-
-  //Eigen::Vector3d gradient;
-  Eigen::Vector3d touch_dir;
-  int num_bins = 0;
-  int count_bar = 0;
-  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155;
-  Eigen::MatrixXd H_cov = coeff * cov_mat;
-
-
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(H_cov);
-  Eigen::MatrixXd rot = eigenSolver.eigenvectors(); 
-  Eigen::VectorXd scl = eigenSolver.eigenvalues();
-  for (int j = 0; j < fulldim; j++) {
-    scl(j, 0) = sqrt(max2(scl(j, 0),0));
-  }
-  Eigen::VectorXd samples(fulldim, 1);
-  Eigen::VectorXd rot_sample(fulldim, 1);
-  if (nodeidx == 1 || nodeidx == 5 || nodeidx == 6) { // Plane
-    cout << "Start updating Plane!" << endl;
-    while (i < numParticles && i < maxNumParticles) {
-      idx = int(floor(distribution(rd)));
-
-      for (int j = 0; j < fulldim; j++) {
-        samples(j, 0) = scl(j, 0) * dist(rd);
-      }
-      rot_sample = rot*samples;
-      for (int j = 0; j < fulldim; j++) {
-        /* TODO: use quaternions instead of euler angles */
-        tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
-      }
-      for (int j = 0; j < cdim; j++) {
-        /* TODO: use quaternions instead of euler angles */
-        tempState[j] = tempFullState[j + nodeidx * cdim];
-      }
-      inverseTransform(cur_M, tempState, cur_inv_M);
-      touch_dir << cur_inv_M[1][0], cur_inv_M[1][1], cur_inv_M[1][2];
-      D = abs(cur_inv_M[0][1] - R);
-
-      count += 1;
-      if (D <= signed_dist_check) {
-        count2 ++;
-        for (int j = 0; j < fulldim; j++) {
-          fullJoint[i][j] = tempFullState[j];
-        }
-        if (checkEmptyBin(&bins, tempState) == 1) {
-          num_bins++;
-          numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
-          // }
-        }
-        i += 1;
-      }
-    }
-    cout << "End updating Plane!" << endl;
-  } else { // Edge
-    while (i < numParticles && i < maxNumParticles) {
-      idx = int(floor(distribution(rd)));
-
-      for (int j = 0; j < fulldim; j++) {
-        samples(j, 0) = scl(j, 0) * dist(rd);
-      }
-      rot_sample = rot*samples;
-      for (int j = 0; j < fulldim; j++) {
-        /* TODO: use quaternions instead of euler angles */
-        tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
-      }
-
-      for (int j = 0; j < cdim; j++) {
-        /* TODO: use quaternions instead of euler angles */
-        tempState[j] = tempFullState[j + nodeidx * cdim];
-      }
-      Eigen::Vector3d x1, x2, x0, tmp1, tmp2;
-      x1 << tempState[0], tempState[1], tempState[2];
-      x2 << tempState[3], tempState[4], tempState[5];
-      x0 << cur_M[0][0], cur_M[0][1], cur_M[0][2];
-      tmp1 = x1 - x0;
-      tmp2 = x2 - x1;
-      D = (tmp1.squaredNorm() * tmp2.squaredNorm() - pow(tmp1.dot(tmp2),2)) / tmp2.squaredNorm();
-      D = abs(sqrt(D)- R);
-          
-      count += 1;
-      if (D <= signed_dist_check) {
-        count2 ++;
-        for (int j = 0; j < fulldim; j++) {
-          fullJoint[i][j] = tempFullState[j];
-        }
-        if (checkEmptyBin(&bins, tempState) == 1) {
-          num_bins++;
-          numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
-        }
-        i += 1;
-      }
-    }
-    cout << "End updating Edge!" << endl;    
-  }
-  cout << "Number of total iterations: " << count << endl;
-  cout << "Number of iterations after unsigned_dist_check: " << count2 << endl;
-  cout << "Number of iterations before safepoint check: " << count3 << endl;
-  cout << "Number of occupied bins: " << num_bins << endl;
-  cout << "Number of particles: " << numParticles << endl;
-  
-  fullJointPrev = fullJoint;
-
-  Eigen::MatrixXd mat = Eigen::Map<Eigen::MatrixXd>((double *)fullJoint.data(), fulldim, numParticles);
-  Eigen::MatrixXd mat_centered = mat.colwise() - mat.rowwise().mean();
-  cov_mat = (mat_centered * mat_centered.adjoint()) / double(max2(mat.cols() - 1, 1));
-
-  cout << "End updating!" << endl;
-  return iffar;
-}
 
 void BayesNet::buildDistTransform(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, int nodeidx) {
   int num_Mean = numParticles;
@@ -357,6 +145,17 @@ void BayesNet::buildDistTransform(double cur_M[2][3], vector<vec4x3> &mesh, dist
   
 }
 
+// /*
+//  * Update particles (Build distance transform and sampling)
+//  * Input: cur_M: current observation
+//  *        mesh: object mesh arrays
+//  *        dist_transform: distance transform class instance
+//  *        R: radius of the touch probe
+//  *        Xstd_ob: observation error
+//  *        nodeidx: idx of datum measured
+//  * output: return whether previous estimate is bad (not used here)
+//  */
+
 bool BayesNet::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, double Xstd_ob, double R, int nodeidx) {
   std::unordered_set<string> bins;
   std::random_device rd;
@@ -377,7 +176,6 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh, distanc
   double unsigned_dist_check = R + 1 * Xstd_ob;
   double signed_dist_check = 1 * Xstd_ob;
 
-  //Eigen::Vector3d gradient;
   Eigen::Vector3d touch_dir;
   int num_bins = 0;
   int count_bar = 0;
@@ -403,7 +201,6 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh, distanc
     }
     rot_sample = rot*samples;
     for (int j = 0; j < fulldim; j++) {
-      /* TODO: use quaternions instead of euler angles */
       tempFullState[j] = b_X[idx][j] + rot_sample(j, 0);
     }
     for (int j = 0; j < cdim; j++) {

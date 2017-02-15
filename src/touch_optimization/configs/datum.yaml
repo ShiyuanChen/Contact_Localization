@@ -19,7 +19,7 @@ right_datum:
 left_datum:
   color: [0.5, 0.5, 0, 0.2]
   prior: [0, 0, 0, 0, 0, 0]
-  initial_uncertainties: [0.01, 0.0001, 0.0, 0.0001, 0.0001, 0.0001]
+  initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   localization_object: left_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
