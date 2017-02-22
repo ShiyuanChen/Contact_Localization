@@ -14,17 +14,17 @@
 #include "tribox.h"
 #include "raytri.h"
 #include "circleEllipse.h"
-#include "BayesNet.h"
+#include "fullStatePFilter.h"
 
 using namespace std;
 
-const int BayesNet::cdim = 6;
-const int BayesNet::fulldim = FULLDIM;
-BayesNet::BayesNet()
+const int fullStatePFilter::cdim = 6;
+const int fullStatePFilter::fulldim = FULLDIM;
+fullStatePFilter::fullStatePFilter()
 {
 }
 
-void BayesNet::addRoot(int n_particles, jointCspace b_init[2], double Xstdob)
+void fullStatePFilter::addRoot(int n_particles, jointCspace b_init[2], double Xstdob)
 {
   Xstd_ob = Xstdob;
   numParticles = n_particles;
@@ -35,7 +35,7 @@ void BayesNet::addRoot(int n_particles, jointCspace b_init[2], double Xstdob)
   createFullJoint(b_init);
 }
 
-void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
+void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
   
   std::random_device rd;
   std::normal_distribution<double> dist(0, 1);
@@ -103,7 +103,7 @@ void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
 }
 
 
-void BayesNet::buildDistTransform(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, int nodeidx) {
+void fullStatePFilter::buildDistTransform(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, int nodeidx) {
   int num_Mean = numParticles;
   std::vector<std::array<double,3>> measure_workspace;
   measure_workspace.resize(num_Mean);
@@ -165,7 +165,7 @@ void BayesNet::buildDistTransform(double cur_M[2][3], vector<vec4x3> &mesh, dist
 //  * output: return whether previous estimate is bad (not used here)
 //  */
 
-bool BayesNet::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, double Xstd_ob, double R, int nodeidx) {
+bool fullStatePFilter::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, double Xstd_ob, double R, int nodeidx) {
   std::unordered_set<string> bins;
   std::random_device rd;
   std::normal_distribution<double> dist(0, 1);
@@ -281,7 +281,7 @@ bool BayesNet::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh, distanc
   return iffar;
 }
 
-void BayesNet::getAllParticles(Particles &particles_dest, int idx)
+void fullStatePFilter::getAllParticles(Particles &particles_dest, int idx)
 {
   particles_dest.resize(numParticles);
   for (int j = 0; j < numParticles; j++) {
@@ -290,12 +290,12 @@ void BayesNet::getAllParticles(Particles &particles_dest, int idx)
     }
   }
 }
-void BayesNet::getHoleParticles(Particles &particles_dest) {
+void fullStatePFilter::getHoleParticles(Particles &particles_dest) {
   particles_dest.resize(numParticles);
   particles_dest = holeConfigs;
 }
 
-void BayesNet::estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx) {
+void fullStatePFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx) {
   cout << "Estimated Mean: ";
   for (int k = 0; k < cdim; k++) {
     x_mean[k] = 0;
@@ -319,7 +319,7 @@ void BayesNet::estimateGaussian(cspace &x_mean, cspace &x_est_stat, int idx) {
 
 }
 
-void BayesNet::generateHole(jointCspace &joint, int right_datum, int top_datum, int plane, double holeOffset1, double holeOffset2, cspace &hole) {
+void fullStatePFilter::generateHole(jointCspace &joint, int right_datum, int top_datum, int plane, double holeOffset1, double holeOffset2, cspace &hole) {
   Eigen::Vector3d pa1, pb1, pa2, pb2, ta, tb;
   int datum1Start = right_datum * cdim;
   int datum2Start = top_datum * cdim;
@@ -401,7 +401,7 @@ void BayesNet::generateHole(jointCspace &joint, int right_datum, int top_datum, 
 }
 
 
-void BayesNet::estimateHole(cspace &x_mean, cspace &x_est_stat) {
+void fullStatePFilter::estimateHole(cspace &x_mean, cspace &x_est_stat) {
   cout << "Estimated Mean: ";
   for (int k = 0; k < cdim; k++) {
     x_mean[k] = 0;
@@ -552,14 +552,14 @@ void transPointConfig(cspace &baseConfig, cspace &relativeConfig, cspace &absolu
 }
 
 void copyParticles(cspace config, fullCspace &fullConfig, int idx) {
-  for (int i = 0; i < BayesNet::cdim; i ++) {
+  for (int i = 0; i < fullStatePFilter::cdim; i ++) {
     fullConfig[idx + i] = config[i];
   }
 }
 
 
 void copyParticles(cspace config, jointCspace &jointConfig, int idx) {
-  for (int i = 0; i < BayesNet::cdim; i ++) {
+  for (int i = 0; i < fullStatePFilter::cdim; i ++) {
     jointConfig[idx + i] = config[i];
   }
 }
@@ -696,7 +696,7 @@ void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, do
 int checkEmptyBin(std::unordered_set<string> *set, cspace config)
 {
   string s = "";
-  for (int i = 0; i < BayesNet::cdim; i++) {
+  for (int i = 0; i < fullStatePFilter::cdim; i++) {
     s += floor(config[i] / DISPLACE_INTERVAL);
     s += ":";
   }

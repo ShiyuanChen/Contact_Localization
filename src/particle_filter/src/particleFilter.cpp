@@ -16,7 +16,7 @@
 #include "particleFilter.h"
 #include "matrix.h"
 #include "stlParser.h"
-#include "BayesNet.h"
+#include "fullStatePFilter.h"
 
 using namespace std;
 
@@ -44,7 +44,7 @@ particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
 {
   b_Xprior[0] = b_init[0];
   b_Xprior[1] = b_init[1];
-  bayesNet.addRoot(numParticles, b_Xprior, Xstd_ob);
+  fullStateFilter.addRoot(numParticles, b_Xprior, Xstd_ob);
 
   // particles.resize(numParticles);
   // particlesPrev.resize(numParticles);
@@ -63,20 +63,20 @@ particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
 
 
 void particleFilter::getHoleParticles(Particles &particles_dest) {
-  bayesNet.getHoleParticles(particles_dest);
+  fullStateFilter.getHoleParticles(particles_dest);
 }
 
 void particleFilter::getAllParticles(Particles &particles_dest)
 {
-  // bayesNet.node[0]->child[0]->getAllParticles(particles_dest);
-  bayesNet.getAllParticles(particles_dest, 0);
+  // fullStateFilter.node[0]->child[0]->getAllParticles(particles_dest);
+  fullStateFilter.getAllParticles(particles_dest, 0);
   // root->child[1]->child[0]->getPriorParticles(particles_dest, cdim);
 }
 
 void particleFilter::getAllParticles(Particles &particles_dest, int idx)
 {
-  // bayesNet.node[0]->child[0]->getAllParticles(particles_dest);
-  bayesNet.getAllParticles(particles_dest, idx);
+  // fullStateFilter.node[0]->child[0]->getAllParticles(particles_dest);
+  fullStateFilter.getAllParticles(particles_dest, idx);
   // root->child[1]->child[0]->getPriorParticles(particles_dest, cdim);
 }
 
@@ -117,10 +117,10 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
   std::random_device generator;
 
   // bool iffar = root->updateParticles(obs, mesh, dist_transform, Xstd_ob, R, miss);
-  // bool iffar = bayesNet.node[0]->child[1]->child[0]->update(obs, Xstd_ob, R);
-  // bool iffar = bayesNet.updateFullJoint(obs, Xstd_ob, R, datum);
+  // bool iffar = fullStateFilter.node[0]->child[1]->child[0]->update(obs, Xstd_ob, R);
+  // bool iffar = fullStateFilter.updateFullJoint(obs, Xstd_ob, R, datum);
 
-  bool iffar = bayesNet.updateFullJoint(obs, mesh, dist_transform, Xstd_ob, R, datum);
+  bool iffar = fullStateFilter.updateFullJoint(obs, mesh, dist_transform, Xstd_ob, R, datum);
 
   auto timer_end = std::chrono::high_resolution_clock::now();
   auto timer_dur = timer_end - timer_begin;
@@ -169,7 +169,7 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
 }
 
 void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
-  bayesNet.estimateHole(x_mean, x_est_stat);
+  fullStateFilter.estimateHole(x_mean, x_est_stat);
 }
 
 
@@ -704,6 +704,6 @@ void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, do
 }
 
 int particleFilter::getNumParticles() {
-	return bayesNet.numParticles;
+	return fullStateFilter.numParticles;
 }
 

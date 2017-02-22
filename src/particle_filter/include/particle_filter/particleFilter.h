@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <Eigen/Dense>
 #include "definitions.h"
-#include "BayesNet.h"
+#include "fullStatePFilter.h"
 #include "distanceTransformNew.h"
 using namespace std;
 
@@ -36,7 +36,7 @@ class particleFilter
 
   double R; // probe radius
   // Node *root;
-  BayesNet bayesNet;
+  fullStatePFilter fullStateFilter;
   // internal variables
   jointCspace b_Xprior[2]; // Initial distribution (mean and variance)
   //cspace b_Xpre[2];   // Previous (estimated) distribution (mean and variance)

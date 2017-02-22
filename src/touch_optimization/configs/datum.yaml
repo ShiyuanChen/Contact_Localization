@@ -36,8 +36,8 @@ top_datum:
 
 bottom_datum:
   color: [0.5, 0, 0.5, 0.2]
-  prior: [0, 0, 0.001, 0.0, -0.005, 0]
-  initial_uncertainties: [0.0, 0.0, 0.005, 0.0, 0.01, 0.0]
+  prior: [0, 0, 0.001, 0.0, -0.001, 0]
+  initial_uncertainties: [0.0, 0.0, 0.005, 0.0, 0.005, 0.0]
   localization_object: bottom_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]

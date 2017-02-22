@@ -168,8 +168,8 @@ add_library(triBox src/tribox.cpp)
 target_link_libraries(triBox
   ${catkin_LIBRARIES})
 
-add_library(BayesNet src/BayesNet.cpp)
-target_link_libraries(BayesNet
+add_library(fullStatePFilter src/fullStatePFilter.cpp)
+target_link_libraries(fullStatePFilter
   ${catkin_LIBRARIES})
 
 #add_library(Node src/Node.cpp)
@@ -208,7 +208,7 @@ target_link_libraries(pfilterBoeingTest
   distanceTransformNew
   rayTri
   triBox
-  BayesNet
+  fullStatePFilter
   circleEllipse
   ${PCL_LIBRARIES}
 )

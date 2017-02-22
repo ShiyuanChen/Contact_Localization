@@ -10,13 +10,13 @@
 
 using namespace std;
 class Parent;
-class BayesNet;
+class fullStatePFilter;
 class particleFilter;
 class Node
 {
   friend class particleFilter;
   friend class Parent;
-  friend class BayesNet;
+  friend class fullStatePFilter;
  public:
   static const int cdim = 6;
   int numParticles; // number of particles

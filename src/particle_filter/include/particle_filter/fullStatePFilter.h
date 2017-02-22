@@ -1,5 +1,5 @@
-#ifndef BAYESNET_H
-#define BAYESNET_H
+#ifndef FULLSTATEPFILTER_H
+#define FULLSTATEPFILTER_H
 #include <vector>
 #include <array>
 #include <cstring>
@@ -9,7 +9,7 @@
 
 using namespace std;
 
-class BayesNet {
+class fullStatePFilter {
 public:
   static const int cdim;
   static const int fulldim;
@@ -24,7 +24,7 @@ public:
   Eigen::MatrixXd cov_mat;
   int numFullJoint;
   int numNode;
-  BayesNet();
+  fullStatePFilter();
   void addRoot(int numParticles, jointCspace b_init[2], double Xstd_ob);
   void createFullJoint(jointCspace b_Xprior[2]);
   bool updateFullJoint(double cur_M[2][3], double Xstd_ob, double R, int idx);
@@ -53,4 +53,4 @@ void copyParticles(cspace config, jointCspace &jointConfig, int idx);
 int checkEmptyBin(std::unordered_set<string> *set, cspace config);
 void calcDistance(vector<vec4x3> &mesh, cspace trueConfig, cspace meanConfig, double euclDist[2]);
 int checkIntersections(vector<vec4x3> &mesh, double voxel_center[3], double dir[3], double check_length, double &dist);
-#endif // BAYESNET_H
+#endif // FULLSTATEPFILTER_H
