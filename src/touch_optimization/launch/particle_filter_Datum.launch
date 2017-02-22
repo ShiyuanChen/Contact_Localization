@@ -37,8 +37,20 @@
     [0, 0, 0, 0, 0, 0]
   </rosparam>
 
+  <rosparam param="datum_list" subst_value="True">
+    ["$(arg localization_object)", "front_datum", "top_datum", "right_datum", "left_datum", "bottom_datum"]
+  </rosparam>
+
   <include file="$(find touch_optimization)/launch/piece.launch">
     <arg name="pieceName" value="$(arg localization_object)"/>
+  </include>
+
+  <include file="$(find touch_optimization)/launch/piece.launch"> 
+    <arg name="pieceName" value="front_datum"/> 
+  </include>
+
+  <include file="$(find touch_optimization)/launch/piece.launch"> 
+    <arg name="pieceName" value="top_datum"/> 
   </include>
 
   <include file="$(find touch_optimization)/launch/piece.launch"> 
@@ -50,11 +62,7 @@
   </include>
 
   <include file="$(find touch_optimization)/launch/piece.launch"> 
-    <arg name="pieceName" value="top_datum"/> 
-  </include>
-
-  <include file="$(find touch_optimization)/launch/piece.launch"> 
-    <arg name="pieceName" value="front_datum"/> 
+    <arg name="pieceName" value="bottom_datum"/> 
   </include>
 
   <include file="$(find touch_optimization)/launch/piece.launch"> 

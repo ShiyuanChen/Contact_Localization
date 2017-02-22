@@ -49,7 +49,7 @@ void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
     }
 
     // Front Plane
-    cspace relativeConfig, baseConfig, transformedConfig, edgeConfig;
+    cspace topConfig, relativeConfig, baseConfig, transformedConfig, edgeConfig;
     cspace frontPlaneConfig, rightPlaneConfig, leftPlaneConfig, topPlaneConfig;
 
     for (int j = 0; j < cdim; j ++) {
@@ -63,6 +63,7 @@ void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
     for (int j = 0; j < cdim; j ++) {
       relativeConfig[j] = relativeConfig[j] + b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
     }
+    topConfig = relativeConfig;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
     copyParticles(topPlaneConfig, fullJointPrev[i], 2 * cdim);
@@ -82,6 +83,14 @@ void BayesNet::createFullJoint(jointCspace b_Xprior[2]) {
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
     copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);
+
+    // Bottom Plane
+    for (int j = 0; j < cdim; j ++) {
+      relativeConfig[j] = topConfig[j] + b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
+    }
+    baseConfig = tmpConfig;
+    transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
+    copyParticles(leftPlaneConfig, fullJointPrev[i], 5 * cdim);
 
     // Hole 
     generateHole(fullJointPrev[i], 3, 2, 1, 0.1, 0.1, holeConfigs[i]);

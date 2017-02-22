@@ -139,16 +139,15 @@ bool PFilterTest::addObs(particle_filter::AddObservation::Request &req,
   geometry_msgs::Point obs = req.p;
   geometry_msgs::Point dir = req.dir;
   int datum = req.datum;
-  std::string meshFile = req.mesh_file;
   ROS_INFO("Current update datum: %d", datum);
-  ROS_INFO_STREAM("Current update datum name: " << meshFile);
+  ROS_INFO_STREAM("Current update datum name: " << datum_name_vec[datum]);
   ROS_INFO("Adding Observation...");
   ROS_INFO("point: %f, %f, %f", obs.x, obs.y, obs.z);
   ROS_INFO("dir: %f, %f, %f", dir.x, dir.y, dir.z);
   double obs2[2][3] = {{obs.x, obs.y, obs.z}, {dir.x, dir.y, dir.z}};
 
   vector<vec4x3> datumMesh;
-  getMesh(stlFileDir + meshFile + ".stl", datumMesh);
+  getMesh(stlFileDir + datum_name_vec[datum] + ".stl", datumMesh);
 
   // pFilter_.addObservation(obs2, mesh, dist_transform, 0, datum);
   pFilter_.addObservation(obs2, datumMesh, dist_transform, 0, datum);
@@ -396,7 +395,10 @@ int main(int argc, char **argv)
 
   ROS_INFO("Testing particle filter");
   
-  std::vector<std::string> datum_name_vec = {"wood_boeing", "front_datum", "top_datum", "right_datum", "left_datum"};
+  std::vector<std::string> datum_name_vec;// = {"wood_boeing", "front_datum", "top_datum", "right_datum", "left_datum", "bottom_datum"};
+  if(!n.getParam("/datum_list", datum_name_vec)){
+    ROS_INFO("Failed to get param: datum_list");
+  }
   // std::string names[] = {"wood_boeing", "front_datum", "top_datum", "right_datum", "left_datum"};
   // datum_name_vec.assign(names, names + 5);
   jointCspace b_Xprior[2];	

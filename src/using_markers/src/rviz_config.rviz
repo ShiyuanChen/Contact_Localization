@@ -17,6 +17,7 @@ Panels:
         - /Marker7
         - /Marker8
         - /Marker8/Namespaces1
+        - /Marker9
       Splitter Ratio: 0.5
     Tree Height: 584
   - Class: rviz/Selection
@@ -136,6 +137,15 @@ Visualization Manager:
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /top_datum/visualization_marker
+      Name: Marker
+      Namespaces:
+        particles: true
+        true_part: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /bottom_datum/visualization_marker
       Name: Marker
       Namespaces:
         particles: true

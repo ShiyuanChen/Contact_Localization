@@ -279,7 +279,7 @@ void fixedSelectionEdge(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_star
  * Randomly chooses vectors, gets the Information Gain for each of 
  *  those vectors, and returns the ray (start and end) with the highest information gain
  */
-void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf::Point &best_start, tf::Point &best_end, int &bestDatum, int &bestIdx, string &bestMeshFile)
+void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf::Point &best_start, tf::Point &best_end, int &bestDatum, int &bestIdx)
 {
   int index;
   double bestIG = 0;
@@ -288,42 +288,43 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   bestIG = 0;
   std::random_device rd;
   std::uniform_real_distribution<double> rand(0, 1);
-  std::uniform_int_distribution<> int_rand(0, 3);
+  std::uniform_int_distribution<> int_rand(1, 5);
   Eigen::Vector3d start;
   Eigen::Vector3d end;
   
   int datum = 0;
-  string meshFile;
   for(int i=0; i<200; i++){
     index = int_rand(rd);
-    if (index == 0) {
+    if (index == 1) {
       double x = rand(rd) * 0.9 + 0.1;
       double z = rand(rd) * 0.18 + 0.03;
       start << x, 1, z;
       end << x, -1, z;
       datum = 1;
-      meshFile = "front_datum";
-    } else if (index == 1) {
-      double y = rand(rd) * 0.035 - 0.06;
-      double z = rand(rd) * 0.21 + 0.01;
-      start << -1, y, z;
-      end << 0.5, y, z;
-      datum = 3;
-      meshFile = "right_datum";
     } else if (index == 2) {
-      double y = rand(rd) * 0.035 - 0.06;
-      double z = rand(rd) * 0.21 + 0.01;
-      start << 2, y, z;
-      end << 0.5, y, z;
-      datum = 4;
-      meshFile = "left_datum";
-    } else {
       double x = rand(rd) * 1.19 + 0.01;
       double y = rand(rd) * 0.058 - 0.06;
       start << x, y, 1;
       end << x, y, -1;
       datum = 2;
-      meshFile = "top_datum";
+    } else if (index == 3) {
+      double y = rand(rd) * 0.035 - 0.06;
+      double z = rand(rd) * 0.21 + 0.01;
+      start << -1, y, z;
+      end << 0.5, y, z;
+      datum = 3;
+    } else if (index == 4) {
+      double y = rand(rd) * 0.035 - 0.06;
+      double z = rand(rd) * 0.21 + 0.01;
+      start << 2, y, z;
+      end << 0.5, y, z;
+      datum = 4;
+    } else {
+      double x = rand(rd) * 1.19 + 0.01;
+      double y = rand(rd) * 0.058 - 0.06;
+      start << x, y, -1;
+      end << x, y, 1;
+      datum = 5;
     }
     // } else {
     //   double x = rand(rd) * 0.9 + 0.1;
@@ -352,7 +353,6 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
       best_start = tf_start;
       best_end = tf_end;
       bestDatum = datum;
-      bestMeshFile = meshFile;
       bestIdx = index;
     }
   }
@@ -371,8 +371,12 @@ int main(int argc, char **argv)
   PlotRayUtils plt;
   // RayTracer rayt;
 
-  std::vector<std::string> datums = {"front_datum", "right_datum", "left_datum",
-            "top_datum"};
+  std::vector<std::string> datums;
+  if(!n.getParam("/datum_list", datums)){
+    ROS_INFO("Failed to get param: datum_list");
+  }
+  // std::vector<std::string> datums = {"front_datum", "right_datum", "left_datum",
+  //           "top_datum", "bottom_datum"};
   std::vector<RayTracer*> rayts;
 
   for (std::string &filename : datums)
@@ -405,9 +409,8 @@ int main(int argc, char **argv)
     //tf::Point end(0.95,2,-0.15);
     tf::Point start, end;
     int datum, datumidx;
-    string meshFile;
     // randomSelection(plt, rayt, start, end);
-    randomSelectionDatum(plt, rayts, start, end, datum, datumidx, meshFile);
+    randomSelectionDatum(plt, rayts, start, end, datum, datumidx);
 
     Ray measurement(start, end);
     
@@ -436,7 +439,6 @@ int main(int argc, char **argv)
     pfilter_obs.request.p = obs;
     pfilter_obs.request.dir = dir;
     pfilter_obs.request.datum = datum;
-    pfilter_obs.request.mesh_file = meshFile;
     if(!srv_add.call(pfilter_obs)){
       ROS_INFO("Failed to call add observation");
     }

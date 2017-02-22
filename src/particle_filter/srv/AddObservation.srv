@@ -1,6 +1,5 @@
 geometry_msgs/Point p
 geometry_msgs/Point dir
 int32 datum
-string mesh_file
 ---
 bool success
