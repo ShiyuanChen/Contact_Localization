@@ -385,9 +385,9 @@ void fullStatePFilter::generateHole(jointCspace &joint, int right_datum, int top
   Transform(dir_prime, planeConfig, dir);
   Transform(origin_prime, planeConfig, origin);
   dir -= origin;
-  hole[0] = pi(0) - holeOffset1;
-  hole[1] = pi(1) - ta(1);
-  hole[2] = pi(2) - ta(2) + holeOffset1;
+  hole[0] = pi(0);
+  hole[1] = pi(1);
+  hole[2] = pi(2);
   // hole[3] = dir(0);
   // hole[4] = dir(1);
   // hole[5] = dir(2);
