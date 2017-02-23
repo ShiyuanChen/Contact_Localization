@@ -41,32 +41,32 @@
     ["$(arg localization_object)", "front_datum", "top_datum", "right_datum", "left_datum", "bottom_datum"]
   </rosparam>
 
-  <include file="$(find touch_optimization)/launch/piece.launch">
-    <arg name="pieceName" value="$(arg localization_object)"/>
+  <include file="$(find touch_optimization)/launch/datum.launch">
+    <arg name="datumName" value="$(arg localization_object)"/>
   </include>
 
-  <include file="$(find touch_optimization)/launch/piece.launch"> 
-    <arg name="pieceName" value="front_datum"/> 
+  <include file="$(find touch_optimization)/launch/datum.launch"> 
+    <arg name="datumName" value="front_datum"/> 
   </include>
 
-  <include file="$(find touch_optimization)/launch/piece.launch"> 
-    <arg name="pieceName" value="top_datum"/> 
+  <include file="$(find touch_optimization)/launch/datum.launch"> 
+    <arg name="datumName" value="top_datum"/> 
   </include>
 
-  <include file="$(find touch_optimization)/launch/piece.launch"> 
-    <arg name="pieceName" value="right_datum"/> 
+  <include file="$(find touch_optimization)/launch/datum.launch"> 
+    <arg name="datumName" value="right_datum"/> 
   </include>
 
-  <include file="$(find touch_optimization)/launch/piece.launch"> 
-    <arg name="pieceName" value="left_datum"/> 
+  <include file="$(find touch_optimization)/launch/datum.launch"> 
+    <arg name="datumName" value="left_datum"/> 
   </include>
 
-  <include file="$(find touch_optimization)/launch/piece.launch"> 
-    <arg name="pieceName" value="bottom_datum"/> 
+  <include file="$(find touch_optimization)/launch/datum.launch"> 
+    <arg name="datumName" value="bottom_datum"/> 
   </include>
 
-  <include file="$(find touch_optimization)/launch/piece.launch"> 
-    <arg name="pieceName" value="hole"/> 
+  <include file="$(find touch_optimization)/launch/datum.launch"> 
+    <arg name="datumName" value="hole"/> 
   </include>
 
   <include file="$(find particle_filter)/launch/pfilterBoeing.launch"/>

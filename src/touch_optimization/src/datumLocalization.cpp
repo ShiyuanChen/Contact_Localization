@@ -293,7 +293,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   Eigen::Vector3d end;
   
   int datum = 0;
-  for(int i=0; i<200; i++){
+  for(int i=0; i<400; i++){
     index = int_rand(rd);
     if (index == 1) {
       double x = rand(rd) * 0.9 + 0.1;
