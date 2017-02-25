@@ -40,13 +40,16 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
   std::random_device rd;
   std::normal_distribution<double> dist(0, 1);
   cspace tmpConfig;
+  for (int j = 0; j < cdim; j++) {
+      tmpConfig[j] = 0;
+  }
   for (int i = 0; i < numParticles; i ++) {
     int pt = 0;
-    // Root
-    for (int j = 0; j < cdim; j++) {
-      fullJointPrev[i][j] = b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
-      tmpConfig[j] = fullJointPrev[i][j];
-    }
+    // // Root
+    // for (int j = 0; j < cdim; j++) {
+    //   fullJointPrev[i][j] = b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
+    //   tmpConfig[j] = fullJointPrev[i][j];
+    // }
 
     // Front Plane
     cspace topConfig, relativeConfig, baseConfig, transformedConfig, edgeConfig;
@@ -57,7 +60,7 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, frontPlaneConfig);
-    copyParticles(frontPlaneConfig, fullJointPrev[i], cdim);
+    copyParticles(frontPlaneConfig, fullJointPrev[i], 0);
 
     // Top Plane
     for (int j = 0; j < cdim; j ++) {
@@ -66,7 +69,7 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
     topConfig = relativeConfig;
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, topPlaneConfig);
-    copyParticles(topPlaneConfig, fullJointPrev[i], 2 * cdim);
+    copyParticles(topPlaneConfig, fullJointPrev[i], cdim);
 
     // Right Plane
     for (int j = 0; j < cdim; j ++) {
@@ -74,7 +77,7 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, rightPlaneConfig);
-    copyParticles(rightPlaneConfig, fullJointPrev[i], 3 * cdim);
+    copyParticles(rightPlaneConfig, fullJointPrev[i], 2 * cdim);
 
     // Left Plane
     for (int j = 0; j < cdim; j ++) {
@@ -82,7 +85,7 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
-    copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);
+    copyParticles(leftPlaneConfig, fullJointPrev[i], 3 * cdim);
 
     // Bottom Plane
     for (int j = 0; j < cdim; j ++) {
@@ -90,7 +93,7 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
-    copyParticles(leftPlaneConfig, fullJointPrev[i], 5 * cdim);
+    copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);
 
     // Hole 
     generateHole(fullJointPrev[i], 3, 2, 1, 0.1, 0.1, holeConfigs[i]);

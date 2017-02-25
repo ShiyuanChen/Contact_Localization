@@ -288,43 +288,43 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   bestIG = 0;
   std::random_device rd;
   std::uniform_real_distribution<double> rand(0, 1);
-  std::uniform_int_distribution<> int_rand(1, 5);
+  std::uniform_int_distribution<> int_rand(0, 4);
   Eigen::Vector3d start;
   Eigen::Vector3d end;
   
   int datum = 0;
   for(int i=0; i<400; i++){
     index = int_rand(rd);
-    if (index == 1) {
+    if (index == 0) {
       double x = rand(rd) * 0.9 + 0.1;
       double z = rand(rd) * 0.18 + 0.03;
       start << x, 1, z;
       end << x, -1, z;
-      datum = 1;
-    } else if (index == 2) {
+      datum = 0;
+    } else if (index == 1) {
       double x = rand(rd) * 1.19 + 0.01;
       double y = rand(rd) * 0.058 - 0.06;
       start << x, y, 1;
       end << x, y, -1;
-      datum = 2;
-    } else if (index == 3) {
+      datum = 1;
+    } else if (index == 2) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.21 + 0.01;
       start << -1, y, z;
       end << 0.5, y, z;
-      datum = 3;
-    } else if (index == 4) {
+      datum = 2;
+    } else if (index == 3) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.21 + 0.01;
       start << 2, y, z;
       end << 0.5, y, z;
-      datum = 4;
+      datum = 3;
     } else {
       double x = rand(rd) * 1.19 + 0.01;
       double y = rand(rd) * 0.058 - 0.06;
       start << x, y, -1;
       end << x, y, 1;
-      datum = 5;
+      datum = 4;
     }
     // } else {
     //   double x = rand(rd) * 0.9 + 0.1;

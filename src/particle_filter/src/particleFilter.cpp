@@ -42,10 +42,16 @@ particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
   : numParticles(n_particles), maxNumParticles(n_particles), 
     Xstd_ob(Xstd_ob), R(R)
 {
+  cspace trueConfig = {0.1, -0.025, 0.13, 0, 0, 0};
   b_Xprior[0] = b_init[0];
   b_Xprior[1] = b_init[1];
   fullStateFilter.addRoot(numParticles, b_Xprior, Xstd_ob);
-
+  cspace particles_mean, tmp2;
+  estimateGaussian(particles_mean, tmp2);
+  cout << "Estimate diff: ";
+  double est_diff = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2])
+                       + SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[4] - trueConfig[4]) + SQ(particles_mean[5] - trueConfig[5]));
+  cout << est_diff << endl;
   // particles.resize(numParticles);
   // particlesPrev.resize(numParticles);
 
@@ -131,7 +137,7 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
   double est_diff = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2])
                        + SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[4] - trueConfig[4]) + SQ(particles_mean[5] - trueConfig[5]));
   cout << est_diff << endl;
-  if (est_diff >= 0.005) {
+  if (est_diff >= 0.002) {
     converge_count ++;
   }
   double est_diff_trans = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2]));
@@ -173,7 +179,151 @@ void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
 }
 
 
+// void particleFilter::computeHoleError(cspace &holdConfig, double circle_radius = 0.004765, double hole_depth = 0.004953
+//                                       double beam_radius = 0.0035) {
+//   double ray_start[3] = {0.1, 0.1, 0.13};
+//   double ray_end[3] = {0.1, -0.3, 0.13};
+//   double circle_center[2][3] = {{1.117218, 0.391705, 0.1536}, {1, 0, 0}};
+//   // double trans_start[3];
+//   // double trans_end[3];
+//   double temp_center[2][3];
+//   double trans_center[2][3];
+//   // Transform(ray_start, particles_mean, trans_start);
+//   // Transform(ray_end, particles_mean, trans_end);
+  
+//   double rate = 0;
+//   double rate2 = 0;
+//   double cumError = 0;
+//   circleEllipse cEllipse(NUM_POLY_ITERATIONS);
+//   for (int ii = 0; ii < numParticles; ii ++) {
+//     inverseTransform(trans_start, particles0[ii], ray_start);
+//     inverseTransform(trans_end, particles0[ii], ray_end);
+//     if(!getIntersectionSeg(mesh, ray_start, ray_end)) {
+//       Transform(circle_center, particles0[ii], temp_center);
+//       inverseTransform(temp_center, particles_mean, trans_center);
+//       Eigen::Vector3d proj_vec;
+//       proj_vec << 1, 0, 0;
+//       Eigen::Vector3d center_vec;
+//       center_vec << trans_center[1][0], trans_center[1][1], trans_center[1][2];
+//       //center_vec /= center_vec.norm();
+//       double cos_view_angle = fabs(center_vec.dot(proj_vec));
+//       double sin_view_angle = sqrt(1 - cos_view_angle * cos_view_angle);
+//       double depth_offset = hole_depth * sin_view_angle;
+//       double minor_length = cos_view_angle * circle_radius;
+//       Eigen::Vector2d minor_vec;
+//       minor_vec << center_vec[1], center_vec[2];
+//       //cout << "minor _vec " << minor_vec << endl;
+//       double minor_angle = atan2(center_vec[1], center_vec[2]);
+//       //cout << "minor _angle  " << minor_angle << endl;
+//       Eigen::Matrix2d rot;
+//       rot << cos(minor_angle), -sin(minor_angle),
+//              sin(minor_angle), cos(minor_angle);
 
+//       Eigen::Vector2d projected_ray, vert_dir, hori_dir;
+//       projected_ray << RAY_START[1] - trans_center[0][1], RAY_START[2] - trans_center[0][2];
+//       projected_ray = rot * projected_ray;
+
+//       if (cEllipse.circleInEllipse(BEAM_RADIUS, projected_ray(0), projected_ray(1), circle_radius, minor_length) &&
+//         cEllipse.circleInEllipse(BEAM_RADIUS, projected_ray(0), projected_ray(1) + depth_offset, circle_radius, minor_length)) {
+//         rate ++;
+//         // cout << "hole position: " << endl << trans_center[0][1] << "   " << trans_center[0][2] << endl;
+//         // cout << "Angle diff: " << endl << center_vec << endl;
+//         // cout << "minor_length: " << minor_length << endl;
+//         vert_dir << 0,1;
+//         hori_dir << 1,0;
+//         vert_dir = rot * vert_dir;
+//         hori_dir = rot * hori_dir;
+//         double xstep_size = BEAM_STEPSIZE * vert_dir(0);
+//         double ystep_size = BEAM_STEPSIZE * vert_dir(1);
+//         // // cout << "Center Dir: " << trans_center[1][0] << "  "
+//         // //                      << trans_center[1][1] << "  "
+//         // //                      << trans_center[1][2] << endl;
+//         // cout << "Projected Ray: " << endl << projected_ray << endl;
+
+//         bool collided = false;
+        
+//         double estX = 0;
+//         double estY = 0;
+//         Eigen::Vector2d meanEst;
+//         Eigen::Matrix2d invRot = rot.inverse();
+//         double h = minor_length;
+//         double w = circle_radius;
+//         double r = BEAM_RADIUS;
+//         double x1 = projected_ray(0);
+//         double y1 = projected_ray(1);
+//         while (abs(x1) <= w && abs(y1) <= h) {
+//           if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
+//               cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
+//             meanEst << x1, y1;
+//             // cout << "y top   ";
+//             break;
+//           }
+//           x1 += xstep_size;
+//           y1 += ystep_size;
+//         }
+//         x1 = projected_ray(0) - xstep_size;
+//         y1 = projected_ray(1) - ystep_size;
+//         while (abs(x1) <= w && abs(y1) <= h) {
+//           if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
+//                 cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
+//               meanEst(0) += x1;
+//               meanEst(1) += y1;
+//               meanEst /= 2;
+//               meanEst = invRot * meanEst;
+//               estY = meanEst(1);
+//               // cout << "y bot   ";
+//               break;
+//           } 
+//           x1 -= xstep_size;
+//           y1 -= ystep_size;
+//         }
+//         xstep_size = BEAM_STEPSIZE * hori_dir(0);
+//         ystep_size = BEAM_STEPSIZE * hori_dir(1);
+//         x1 = projected_ray(0);
+//         y1 = projected_ray(1);
+//         while (abs(x1) <= w && abs(y1) <= h) {
+//           if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
+//               cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
+//             meanEst << x1, y1;
+//             // cout << "x right   ";
+//             break;
+//           }
+//           x1 += xstep_size;
+//           y1 += ystep_size;
+//         }
+//         x1 = projected_ray(0) - xstep_size;
+//         y1 = projected_ray(1) - ystep_size;
+//         while (abs(x1) <= w && abs(y1) <= h) {
+//           if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
+//               cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
+//             meanEst(0) += x1;
+//             meanEst(1) += y1;
+//             meanEst /= 2;
+//             meanEst = invRot * meanEst;
+//             estX = meanEst(0);
+//             // cout << "x left" << endl;
+//             break;
+//           }
+//           x1 -= xstep_size;
+//           y1 -= ystep_size;
+//         }
+//         //cout << "X: " << estX << "    Y: " << estY << endl;
+//         //cout << "Depth offset: " << depth_offset << endl;
+//         cumError += sqrt(SQ(estX) + SQ(estY));
+
+//       }
+//       rate2 ++;
+//     }
+
+//   }
+//   cumError /= rate;
+//   rate /= numParticles;
+//   rate2 /= numParticles;
+//   cout << "Average Error: " << cumError << endl;
+//   cout << "Succ Rate: " << rate << endl;
+//   cout << "Succ Rate2: " << rate2 << endl;
+
+// }
 
 
 
@@ -419,6 +569,54 @@ int checkInObject(vector<vec4x3> &mesh, double voxel_center[3])
 	}
   delete t, u, v;
   return 1;
+}
+
+/*
+ * Find the intersection point between a ray segment and meshes
+ * Input: mesh: mesh arrays
+ *        pstart: start point
+ *        pend: end point
+ * Output: 1 if intersect
+ *         0 if not
+ */
+int getIntersectionSeg(vector<vec4x3> &mesh, double pstart[3], double pend[3])
+{
+  int num_mesh = int(mesh.size());
+  double vert0[3], vert1[3], vert2[3];
+  double *t = new double;
+  double *u = new double;
+  double *v = new double;
+  double dir[3];
+  dir[0] = pend[0] - pstart[0];
+  dir[1] = pend[1] - pstart[1];
+  dir[2] = pend[2] - pstart[2];
+  double seg_length = sqrt(SQ(dir[0]) + SQ(dir[1]) + SQ(dir[2]));
+  dir[0] /= seg_length;
+  dir[1] /= seg_length;
+  dir[2] /= seg_length;
+  for (int i = 0; i < num_mesh; i++)
+  {
+    vert0[0] = mesh[i][1][0];
+    vert0[1] = mesh[i][1][1];
+    vert0[2] = mesh[i][1][2];
+    vert1[0] = mesh[i][2][0];
+    vert1[1] = mesh[i][2][1];
+    vert1[2] = mesh[i][2][2];
+    vert2[0] = mesh[i][3][0];
+    vert2[1] = mesh[i][3][1];
+    vert2[2] = mesh[i][3][2];
+    if (intersect_triangle(pstart, dir, vert0, vert1, vert2, t, u, v) == 1 && *t < seg_length)
+    {
+      delete t, u, v;
+      // cout << "   " << dir[0] << "  " << dir[1] << "  " << dir[2] << endl;
+      // cout << "   " << pstart[0] << "  " << pstart[1] << "  " << pstart[2] << endl;
+      return 1;
+    }
+
+  }
+  delete t, u, v;
+  
+  return 0;
 }
 
 /*
