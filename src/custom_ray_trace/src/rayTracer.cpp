@@ -82,7 +82,7 @@ tf::StampedTransform ParticleHandler::getTransformToPartFrame()
 
 void ParticleHandler::setParticles(geometry_msgs::PoseArray p)
 {
-  ROS_INFO("setParticles called");
+  ROS_INFO_STREAM("setParticles called from Datum: " << datumName);
   particles.resize(p.poses.size());
 
   
@@ -287,6 +287,7 @@ bool RayTracer::traceAllParticles(Ray ray, std::vector<double> &distToPart, bool
 
   bool hitPart = false;
   for(int i=0; i<particles.size(); i++){
+    cout << particles[i].getOrigin().x() << " " << particles[i].getOrigin().y() << " " << particles[i].getOrigin().z() << std::endl;
     hitPart = tracePartFrameRay(ray.getTransformed(particles[i]), distToPart[i], quick) || hitPart;
   }
   return hitPart;
@@ -298,6 +299,13 @@ bool RayTracer::traceAllParticles(Ray ray, std::vector<double> &distToPart, bool
 double RayTracer::getIG(Ray ray, double radialErr, double distErr)
 {
   vector<CalcEntropy::ConfigDist> distsToParticles;
+  if(!traceCylinderAllParticles(ray, radialErr, distsToParticles))
+     return 0;
+  return CalcEntropy::calcIG(distsToParticles, distErr, particleHandler.getNumSubsetParticles());
+}
+
+double RayTracer::getIG(Ray ray, vector<CalcEntropy::ConfigDist> &distsToParticles, double radialErr, double distErr)
+{
   if(!traceCylinderAllParticles(ray, radialErr, distsToParticles))
      return 0;
   return CalcEntropy::calcIG(distsToParticles, distErr, particleHandler.getNumSubsetParticles());

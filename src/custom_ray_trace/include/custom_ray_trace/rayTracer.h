@@ -73,6 +73,7 @@ class RayTracer
   bool traceAllParticles(Ray ray, std::vector<double> &distToPart, bool quick=true);
 
   double getIG(Ray ray, double radialErr, double distErr);
+  double getIG(Ray ray, vector<CalcEntropy::ConfigDist> &distsToParticles, double radialErr, double distErr);
   double getIG(std::vector<Ray> rays, double radialErr, double distErr);
   bool traceCylinderAllParticles(Ray ray, double radius, vector<CalcEntropy::ConfigDist> &dists,
 				 bool quick = true);

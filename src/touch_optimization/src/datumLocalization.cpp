@@ -15,6 +15,7 @@
 #include <tf/transform_broadcaster.h>
 #include "custom_ray_trace/plotRayUtils.h"
 #include "custom_ray_trace/rayTracer.h"
+#include "custom_ray_trace/calcEntropy.h"
 #include <ros/console.h>
 #include <Eigen/Dense>
 
@@ -291,7 +292,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   std::uniform_int_distribution<> int_rand(0, 5);
   Eigen::Vector3d start;
   Eigen::Vector3d end;
-  
+  vector<CalcEntropy::ConfigDist> distsToParticles;
   int datum = 0;
   for(int i=0; i<600; i++){
     index = int_rand(rd);
@@ -380,6 +381,13 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
      best_start.getX(), best_start.getY(), best_start.getZ(),
      best_end.getX(), best_end.getY(), best_end.getZ());
   plt.plotRay(Ray(best_start, best_end));
+
+  // Ray measurement(best_start, best_end);
+  // rayts[bestIdx]->getIG(measurement, distsToParticles, 0.01, 0.002);
+  // std::cout << "Verify: " << rayts[bestIdx]->getIG(measurement, distsToParticles, 0.01, 0.002) << " == " << bestIG << " ?" << std::endl;
+  // for (int i = 0; i < distsToParticles.size(); i ++) {
+  //   std::cout << distsToParticles[i].dist << endl;
+  // }
 }
 
 
