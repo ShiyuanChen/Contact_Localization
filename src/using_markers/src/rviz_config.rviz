@@ -93,10 +93,11 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /wood_boeing/visualization_marker
+      Marker Topic: /J1_section/visualization_marker
       Name: Marker
       Namespaces:
         particles: true
+        true_part: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker

@@ -288,7 +288,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   bestIG = 0;
   std::random_device rd;
   std::uniform_real_distribution<double> rand(0, 1);
-  std::uniform_int_distribution<> int_rand(0, 4);
+  std::uniform_int_distribution<> int_rand(0, 5);
   Eigen::Vector3d start;
   Eigen::Vector3d end;
   
@@ -298,33 +298,52 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
     if (index == 0) {
       double x = rand(rd) * 0.9 + 0.1;
       double z = rand(rd) * 0.18 + 0.03;
-      start << x, 1, z;
-      end << x, -1, z;
+      start << x, 0.5, z;
+      end << x, -0.5, z;
       datum = 0;
     } else if (index == 1) {
       double x = rand(rd) * 1.19 + 0.01;
       double y = rand(rd) * 0.058 - 0.06;
-      start << x, y, 1;
-      end << x, y, -1;
+      start << x, y, 0.5;
+      end << x, y, -0.5;
       datum = 1;
     } else if (index == 2) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.21 + 0.01;
-      start << -1, y, z;
+      start << -0.5, y, z;
       end << 0.5, y, z;
       datum = 2;
     } else if (index == 3) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.21 + 0.01;
-      start << 2, y, z;
+      start << 1.5, y, z;
       end << 0.5, y, z;
       datum = 3;
-    } else {
+    } else if (index == 4){
       double x = rand(rd) * 1.19 + 0.01;
       double y = rand(rd) * 0.058 - 0.06;
-      start << x, y, -1;
-      end << x, y, 1;
+      start << x, y, -0.5;
+      end << x, y, 0.5;
       datum = 4;
+    } else {
+      int subidx = int_rand(rd);
+      if (subidx < 3) {
+        double y = rand(rd) * 0.28 - 0.36;
+        double z = rand(rd) * 0.20 + 0.01;
+        start << 0, y, z;
+        end << 1, y, z;
+      } else if (subidx < 5) {
+        double x = rand(rd) * 0.03 + 0.31;
+        double y = rand(rd) * 0.28 - 0.36;
+        start << x, y, 0.5;
+        end << x, y, 0;
+      } else {
+        double x = rand(rd) * 0.03 + 0.31;
+        double z = rand(rd) * 0.20 + 0.01;
+        start << x, -0.5, z;
+        end << x, 0, z;
+      }
+      datum = 5;
     }
     // } else {
     //   double x = rand(rd) * 0.9 + 0.1;

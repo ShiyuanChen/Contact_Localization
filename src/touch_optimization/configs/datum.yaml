@@ -52,6 +52,15 @@ bottom_datum:
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]
 
+J1_section:
+  color: [0.5, 0.5, 0.5, 0.2]
+  prior: [0.02, 0, 0, 0.0, 0, -0.01]
+  initial_uncertainties: [0.04, 0.0, 0.0, 0.0, 0.00, 0.04]
+  localization_object: J1_section
+  particle_frame: [0, 0, 0, 0, 0, 0]
+  true_frame: [0, 0, 0, 0, 0, 0]
+  true_state: [0, 0, 0, 0, 0, 0]
+
 hole:
   color: [0, 1, 0, 0.5]
   localization_object: hole
