@@ -478,19 +478,19 @@ int main(int argc, char **argv)
     }
     i ++;
   }
-  // std::ofstream myfile;
-  // myfile.open("/home/shiyuan/Documents/ros_marsarm/diff.csv", std::ios::out|std::ios::app);
-  // myfile << "\n";
-  // myfile.close();
-  // myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", std::ios::out|std::ios::app);
-  // myfile << "\n";
-  // myfile.close();
-  // myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_trans.csv", std::ios::out|std::ios::app);
-  // myfile << "\n";
-  // myfile.close();
-  // myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_rot.csv", std::ios::out|std::ios::app);
-  // myfile << "\n";
-  // myfile.close();
+  std::ofstream myfile;
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_trans.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_rot.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
   // myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace_max.csv", std::ios::out|std::ios::app);
   // myfile << "\n";
   // myfile.close();

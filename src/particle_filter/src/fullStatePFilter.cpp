@@ -200,7 +200,7 @@ bool fullStatePFilter::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh,
   Eigen::Vector3d touch_dir;
   int num_bins = 0;
   int count_bar = 0;
-  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155/1.5;
+  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155/2.1;
   Eigen::MatrixXd H_cov = coeff * cov_mat;
 
 
@@ -213,7 +213,8 @@ bool fullStatePFilter::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh,
   Eigen::VectorXd samples(fulldim, 1);
   Eigen::VectorXd rot_sample(fulldim, 1);
   buildDistTransform(cur_M, mesh, dist_transform, nodeidx);
-  cout << "Start updating datum: " + nodeidx << endl;
+
+  std::cout << "Start updating datum: " + std::to_string(nodeidx) << std::endl;
   while (i < numParticles && i < maxNumParticles) {
     idx = int(floor(distribution(rd)));
 

@@ -9,7 +9,9 @@
 
 front_datum:
   color: [0, 0.5, 0.5, 0.2]
-  prior: [0, -0.02, 0, 0, 0, 0.03]
+  # prior: [0, 0.0, 0, 0, 0, 0]
+  # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  prior: [0, -0.023, 0, 0, 0, 0.03]
   initial_uncertainties: [0.0, 0.03, 0.0, 0.0, 0.0, 0.05]
   localization_object: front_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
@@ -18,8 +20,10 @@ front_datum:
 
 top_datum:
   color: [0.5, 0, 0.5, 0.2]
-  prior: [0, 0, 0.02, 0.0, 0.04, 0]
-  initial_uncertainties: [0.0, 0.0, 0.03, 0.0, 0.05, 0.0]
+  # prior: [0, 0, 0, 0, 0, 0]
+  # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  prior: [0, 0, 0.025, 0.0, 0.04, 0]
+  initial_uncertainties: [0.0, 0.0, 0.03, 0.01, 0.05, 0.0]
   localization_object: top_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
@@ -27,8 +31,10 @@ top_datum:
 
 right_datum:
   color: [0, 0, 1, 0.2]
-  prior: [0.02, 0, 0, 0, -0.005, 0]
-  initial_uncertainties: [0.03, 0.0, 0.0, 0.0, 0.01, 0]
+  # prior: [0, 0, 0, 0, 0, 0]
+  # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  prior: [0.02, 0, 0, 0, -0.005, 0.01]
+  initial_uncertainties: [0.03, 0.0, 0.0, 0.0, 0.02, 0.02]
   localization_object: right_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
@@ -36,8 +42,10 @@ right_datum:
 
 left_datum:
   color: [0.5, 0.5, 0, 0.2]
-  prior: [0.01, 0, 0, 0, 0.001, 0]
-  initial_uncertainties: [0.02, 0.0, 0.0, 0.0, 0.01, 0.0]
+  # prior: [0, 0, 0, 0, 0, 0]
+  # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  prior: [0.005, 0, 0, 0, 0.005, -0.01]
+  initial_uncertainties: [0.01, 0.0, 0.0, 0.0, 0.02, 0.02]
   localization_object: left_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
@@ -45,8 +53,11 @@ left_datum:
 
 bottom_datum:
   color: [0.5, 0, 0.5, 0.2]
-  prior: [0, 0, 0.005, 0.0, 0, 0]
-  initial_uncertainties: [0.0, 0.0, 0.01, 0.0, 0.01, 0.0]
+  # prior: [0, 0, 0, 0, 0, 0]
+  # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  
+  prior: [0, 0, 0.005, -0.01, 0.01, 0]
+  initial_uncertainties: [0.0, 0.0, 0.02, 0.02, 0.02, 0.0]
   localization_object: bottom_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
@@ -54,8 +65,10 @@ bottom_datum:
 
 J1_section:
   color: [0.5, 0.5, 0.5, 0.2]
-  prior: [0.01, 0, 0, 0.01, 0, -0.01]
-  initial_uncertainties: [0.002, 0.002, 0.002, 0.02, 0.02, 0.02]
+  # prior: [0, 0, 0, 0, 0, 0]
+  # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  prior: [0.01, 0.005, -0.003, 0.01, 0, -0.01]
+  initial_uncertainties: [0.01, 0.01, 0.01, 0.02, 0.02, 0.02]
   localization_object: J1_section
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
