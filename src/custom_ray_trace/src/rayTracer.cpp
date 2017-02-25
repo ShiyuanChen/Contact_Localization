@@ -47,12 +47,12 @@ ParticleHandler::ParticleHandler()
   if(!rosnode.getParam("localization_object", cadName)){
     ROS_INFO("Failed to get param: localization_object");
   }
-  datumName = "wood_boeing";
+  datumName = "right_datum";
   particlesInitialized = false;
   newParticles = true;
   tf_listener_.waitForTransform("/my_frame", "/true_frame", ros::Time(0), ros::Duration(10.0));
   tf_listener_.lookupTransform("/true_frame", "/my_frame", ros::Time(0), trans_);
-  particleSub = rosnode.subscribe("/wood_boeing/particles_from_filter", 1000, 
+  particleSub = rosnode.subscribe("/right_datum/particles_from_filter", 1000, 
 				     &ParticleHandler::setParticles, this);
   requestParticlesPub = rosnode.advertise<std_msgs::Empty>("/request_particles", 5);
 }
@@ -287,7 +287,7 @@ bool RayTracer::traceAllParticles(Ray ray, std::vector<double> &distToPart, bool
 
   bool hitPart = false;
   for(int i=0; i<particles.size(); i++){
-    cout << particles[i].getOrigin().x() << " " << particles[i].getOrigin().y() << " " << particles[i].getOrigin().z() << std::endl;
+    // cout << particles[i].getOrigin().x() << " " << particles[i].getOrigin().y() << " " << particles[i].getOrigin().z() << std::endl;
     hitPart = tracePartFrameRay(ray.getTransformed(particles[i]), distToPart[i], quick) || hitPart;
   }
   return hitPart;

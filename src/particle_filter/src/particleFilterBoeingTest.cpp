@@ -22,7 +22,7 @@
 #include <array>
 
 // #define POINT_CLOUD
-#define NUM_PARTICLES 500
+#define NUM_PARTICLES 800
 typedef array<array<float, 3>, 4> vec4x3;
 
 #ifdef POINT_CLOUD

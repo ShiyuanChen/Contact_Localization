@@ -42,7 +42,7 @@ particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
   : numParticles(n_particles), maxNumParticles(n_particles), 
     Xstd_ob(Xstd_ob), R(R)
 {
-  cspace trueConfig = {0.1, -0.025, 0.13, 0, 0, 0};
+  cspace trueConfig = {1.1192, -0.025, 0.13, 0, 0, 0};
   b_Xprior[0] = b_init[0];
   b_Xprior[1] = b_init[1];
   fullStateFilter.addRoot(numParticles, b_Xprior, Xstd_ob);
@@ -50,7 +50,7 @@ particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
   estimateGaussian(particles_mean, tmp2);
   cout << "Estimate diff: ";
   double est_diff = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2])
-                       + SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[4] - trueConfig[4]) + SQ(particles_mean[5] - trueConfig[5]));
+                       + SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[5] - trueConfig[5]));
   cout << est_diff << endl;
   // particles.resize(numParticles);
   // particlesPrev.resize(numParticles);
@@ -117,7 +117,7 @@ void particleFilter::getAllParticles(Particles &particles_dest, int idx)
 void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, distanceTransform *dist_transform, bool miss, int datum)
 {
 	// cspace trueConfig = {0.3, 0.3, 0.3, 0.5, 0.7, 0.5};
-	cspace trueConfig = {0.1, -0.025, 0.13, 0, 0, 0};
+	cspace trueConfig = {1.1192, -0.025, 0.13, 0, 0, 0};
   cout << "Xstd_Ob: " << Xstd_ob << endl;
   auto timer_begin = std::chrono::high_resolution_clock::now();
   std::random_device generator;
@@ -135,9 +135,9 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
   estimateGaussian(particles_mean, tmp2);
   cout << "Estimate diff: ";
   double est_diff = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2])
-                       + SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[4] - trueConfig[4]) + SQ(particles_mean[5] - trueConfig[5]));
+                       + SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[5] - trueConfig[5]));
   cout << est_diff << endl;
-  if (est_diff >= 0.002) {
+  if (est_diff >= 0.0015) {
     converge_count ++;
   }
   double est_diff_trans = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2]));
