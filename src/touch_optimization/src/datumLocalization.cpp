@@ -288,12 +288,12 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   bestIG = 0;
   std::random_device rd;
   std::uniform_real_distribution<double> rand(0, 1);
-  std::uniform_int_distribution<> int_rand(0, 5);
+  std::uniform_int_distribution<> int_rand(0, 4);
   Eigen::Vector3d start;
   Eigen::Vector3d end;
   
   int datum = 0;
-  for(int i=0; i<400; i++){
+  for(int i=0; i<600; i++){
     index = int_rand(rd);
     if (index == 0) {
       double x = rand(rd) * 0.9 + 0.1;

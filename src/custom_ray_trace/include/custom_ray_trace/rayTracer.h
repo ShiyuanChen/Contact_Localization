@@ -29,7 +29,6 @@ class ParticleHandler
   ros::Publisher requestParticlesPub;
   bool particlesInitialized;
 
-
  public:
   ParticleHandler();
   ParticleHandler(std::string datumNames);
@@ -37,7 +36,9 @@ class ParticleHandler
   tf::StampedTransform trans_;
   std::vector<tf::Transform> particles;
   std::vector<tf::Transform> subsetParticles;
-  bool newParticles;  
+  bool newParticles;
+  std::string datumName;
+
 
   tf::StampedTransform getTransformToPartFrame();  
   void setParticles(geometry_msgs::PoseArray p);

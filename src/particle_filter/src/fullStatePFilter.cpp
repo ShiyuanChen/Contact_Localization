@@ -200,7 +200,7 @@ bool fullStatePFilter::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh,
   Eigen::Vector3d touch_dir;
   int num_bins = 0;
   int count_bar = 0;
-  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155;
+  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155/3;
   Eigen::MatrixXd H_cov = coeff * cov_mat;
 
 

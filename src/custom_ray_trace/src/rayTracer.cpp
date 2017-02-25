@@ -47,6 +47,7 @@ ParticleHandler::ParticleHandler()
   if(!rosnode.getParam("localization_object", cadName)){
     ROS_INFO("Failed to get param: localization_object");
   }
+  datumName = "wood_boeing";
   particlesInitialized = false;
   newParticles = true;
   tf_listener_.waitForTransform("/my_frame", "/true_frame", ros::Time(0), ros::Duration(10.0));
@@ -56,9 +57,10 @@ ParticleHandler::ParticleHandler()
   requestParticlesPub = rosnode.advertise<std_msgs::Empty>("/request_particles", 5);
 }
 
-ParticleHandler::ParticleHandler(std::string datumName)
+ParticleHandler::ParticleHandler(std::string datumNames)
 {
   std::string cadName;
+  datumName = datumNames;
   if(!rosnode.getParam("localization_object", cadName)){
     ROS_INFO("Failed to get param: localization_object");
   }
