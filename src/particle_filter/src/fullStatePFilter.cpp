@@ -105,7 +105,7 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
     copyParticles(leftPlaneConfig, fullJointPrev[i], 5 * cdim);
 
     // Hole 
-    generateHole(fullJointPrev[i], 3, 2, 1, 0.1, 0.1, holeConfigs[i]);
+    generateHole(fullJointPrev[i], 2, 1, 0, 0.1, 0.1, holeConfigs[i]);
 
   }
   fullJoint = fullJointPrev;
@@ -268,7 +268,7 @@ bool fullStatePFilter::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh,
       for (int j = 0; j < fulldim; j++) {
         fullJoint[i][j] = tempFullState[j];
       }
-      generateHole(fullJoint[i], 3, 2, 1, 0.1, 0.1, holeConfigs[i]);
+      generateHole(fullJoint[i], 2, 1, 0, 0.1, 0.1, holeConfigs[i]);
       if (checkEmptyBin(&bins, tempState) == 1) {
         num_bins++;
         numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
