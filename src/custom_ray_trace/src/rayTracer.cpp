@@ -1,6 +1,7 @@
 #include "rayTracer.h"
 #include "stlParser.h"
 #include <std_msgs/Empty.h>
+#include <utility>
 
 
 /*
@@ -240,14 +241,13 @@ bool RayTracer::traceRay(const stl::Mesh &mesh, const Ray &ray, double &distToPa
 /*
  * Returns true if ray intersections with part and sets the distToPart
  */
-bool RayTracer::tracePartFrameRay(const Ray &ray, double &distToPart, bool quick)
+bool RayTracer::tracePartFrameRay(const Ray &ray, double &distToPart)
 {
   distToPart = 1000;
 
   //Quick check to see if ray has a chance of hitting any particle
   double tmp;
-  if(quick && !traceRay(surroundingBox, ray, tmp))
-     return false;
+
   return traceRay(mesh, ray, distToPart);
 }
 
@@ -261,9 +261,8 @@ bool RayTracer::traceRay(Ray ray, double &distToPart){
 /*
  *  Traces a ray (specified in world frame) on all particles
  *  Returns true if at least 1 ray intersected the part
- *   If "quick" then it will not set distances if ray misses all particles
  */
-bool RayTracer::traceAllParticles(Ray ray, std::vector<double> &distToPart, bool quick)
+bool RayTracer::traceAllParticles(Ray ray, std::vector<double> &distToPart)
 {
   transformRayToPartFrame(ray);
   std::vector<tf::Transform> particles = particleHandler.getParticleSubset();
@@ -280,15 +279,45 @@ bool RayTracer::traceAllParticles(Ray ray, std::vector<double> &distToPart, bool
   }
   
   double tmp;
-  if(quick && !traceRay(surroundingBoxAllParticles, ray, tmp))
-    return false;
 
   distToPart.resize(particles.size());
 
   bool hitPart = false;
   for(int i=0; i<particles.size(); i++){
     // cout << particles[i].getOrigin().x() << " " << particles[i].getOrigin().y() << " " << particles[i].getOrigin().z() << std::endl;
-    hitPart = tracePartFrameRay(ray.getTransformed(particles[i]), distToPart[i], quick) || hitPart;
+    hitPart = tracePartFrameRay(ray.getTransformed(particles[i]), distToPart[i]) || hitPart;
+  }
+  return hitPart;
+}
+
+/*
+ *  Traces a ray (specified in world frame) on all particles
+ *  Returns true if at least 1 ray intersected the part
+ */
+bool RayTracer::traceAllParticles(Ray ray, std::vector<double> &distToPart, ParticlePair &particlePair)
+{
+  transformRayToPartFrame(ray);
+  std::vector<tf::Transform> particles = particleHandler.getParticleSubset();
+
+  // ROS_INFO("First particle for traceAll: %f, %f, %f", particles[0].getOrigin().getX(),
+  //     particles[0].getOrigin().getY(),
+  //     particles[0].getOrigin().getZ());
+
+
+  //Quick check to see if ray even has a chance of hitting any particle
+  if(particleHandler.theseAreNewParticles()){
+    particleHandler.newParticles = false;
+    surroundingBoxAllParticles = getBoxAroundAllParticles(mesh);
+  }
+  
+  double tmp;
+
+  distToPart.resize(particles.size());
+
+  bool hitPart = false;
+  for(int i=0; i<particles.size(); i++){
+    // cout << particles[i].getOrigin().x() << " " << particles[i].getOrigin().y() << " " << particles[i].getOrigin().z() << std::endl;
+    hitPart = tracePartFrameRay(ray.getTransformed(particles[i]), distToPart[i]) || hitPart;
   }
   return hitPart;
 }
@@ -311,6 +340,12 @@ double RayTracer::getIG(Ray ray, vector<CalcEntropy::ConfigDist> &distsToParticl
   return CalcEntropy::calcIG(distsToParticles, distErr, particleHandler.getNumSubsetParticles());
 }
 
+double RayTracer::getFullStateIG(Ray ray, double radialErr, double distErr, ParticlePair &particlePair) {
+  vector<CalcEntropy::ConfigDist> distsToParticles;
+  if(!traceCylinderAllParticles(ray, radialErr, distsToParticles, particlePair))
+     return 0;
+  return CalcEntropy::calcIG(distsToParticles, distErr, particleHandler.getNumSubsetParticles());
+}
 
 double RayTracer::getIG(std::vector<Ray> rays, double radialErr, double distErr){
 
@@ -320,7 +355,7 @@ double RayTracer::getIG(std::vector<Ray> rays, double radialErr, double distErr)
   int i=0;
   for(Ray ray: rays){
     vector<CalcEntropy::ConfigDist> dists;
-    traceCylinderAllParticles(ray, radialErr, dists, false);
+    traceCylinderAllParticles(ray, radialErr, dists);
     if(firstrun){
        histCombined = CalcEntropy::processMeasurements(dists, distErr, n);    
        firstrun = false;
@@ -342,8 +377,7 @@ double RayTracer::getIG(std::vector<Ray> rays, double radialErr, double distErr)
  *  Returns true if at least one ray hit the part
  */
 bool RayTracer::traceCylinderAllParticles(Ray ray, double radius, 
-					  vector<CalcEntropy::ConfigDist> &distsToPart,
-					  bool quick)
+					  vector<CalcEntropy::ConfigDist> &distsToPart)
 {
   std::vector<tf::Vector3> ray_orthog = getOrthogonalBasis(ray.getDirection());
   int n = 12;
@@ -357,7 +391,7 @@ bool RayTracer::traceCylinderAllParticles(Ray ray, double radius,
     Ray cylinderRay(ray.start + offset, ray.end+offset);
     vector<double> distsTmp;
     
-    hitPart = traceAllParticles(cylinderRay, distsTmp, quick) || hitPart;
+    hitPart = traceAllParticles(cylinderRay, distsTmp) || hitPart;
 
     for(int pNumber = 0; pNumber<distsTmp.size(); pNumber++){
       CalcEntropy::ConfigDist cDist;
@@ -368,6 +402,40 @@ bool RayTracer::traceCylinderAllParticles(Ray ray, double radius,
   }
   return hitPart;
 }
+
+/*
+ *  Returns the possible distances receives from casting a cylinder of rays
+ *  
+ *  Returns true if at least one ray hit the part
+ */
+bool RayTracer::traceCylinderAllParticles(Ray ray, double radius, 
+            vector<CalcEntropy::ConfigDist> &distsToPart,
+            ParticlePair &particlePair)
+{
+  std::vector<tf::Vector3> ray_orthog = getOrthogonalBasis(ray.getDirection());
+  int n = 12;
+  
+  bool hitPart = false;
+
+  for(int i = 0; i < n; i ++){
+    double theta = 2*3.1415 * i / n;
+    tf::Vector3 offset = radius * (ray_orthog[0]*sin(theta) + ray_orthog[1]*cos(theta));
+
+    Ray cylinderRay(ray.start + offset, ray.end+offset);
+    vector<double> distsTmp;
+    
+    hitPart = traceAllParticles(cylinderRay, distsTmp, particlePair) || hitPart;
+
+    for(int pNumber = 0; pNumber<distsTmp.size(); pNumber++){
+      CalcEntropy::ConfigDist cDist;
+      cDist.id = pNumber;
+      cDist.dist = distsTmp[pNumber];
+      distsToPart.push_back(cDist);
+    }
+  }
+  return hitPart;
+}
+
 
 /**
  *  Return vector of two Vector3s that form a basis for the space orthogonal to the ray

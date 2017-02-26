@@ -6,8 +6,10 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseArray.h>
+#include <utility>
 #include "calcEntropy.h"
 
+typedef std::vector<std::pair<tf::Transform, tf::Transform>> ParticlePair;
 class Ray
 {
  public:
@@ -67,16 +69,19 @@ class RayTracer
   RayTracer();
   bool loadMesh();
   bool loadMesh(std::string filename);
-  bool tracePartFrameRay(const Ray &ray, double &distToPart, bool quick=false);
+  bool tracePartFrameRay(const Ray &ray, double &distToPart);
   bool traceRay(Ray ray, double &distToPart);
   bool traceRay(const stl::Mesh &mesh, const Ray &ray, double &distToPart);
-  bool traceAllParticles(Ray ray, std::vector<double> &distToPart, bool quick=true);
+  bool traceAllParticles(Ray ray, std::vector<double> &distToPart);
+  bool traceAllParticles(Ray ray, std::vector<double> &distToPart, ParticlePair &particlePair);
 
+
+  double getFullStateIG(Ray ray, double radialErr, double distErr, ParticlePair &particlePair);
   double getIG(Ray ray, double radialErr, double distErr);
   double getIG(Ray ray, vector<CalcEntropy::ConfigDist> &distsToParticles, double radialErr, double distErr);
   double getIG(std::vector<Ray> rays, double radialErr, double distErr);
-  bool traceCylinderAllParticles(Ray ray, double radius, vector<CalcEntropy::ConfigDist> &dists,
-				 bool quick = true);
+  bool traceCylinderAllParticles(Ray ray, double radius, vector<CalcEntropy::ConfigDist> &dists);
+  bool traceCylinderAllParticles(Ray ray, double radius, vector<CalcEntropy::ConfigDist> &distsToPart, ParticlePair &particlePair);
   std::vector<tf::Vector3> getOrthogonalBasis(tf::Vector3 dir);
 
   stl::Mesh getBoxAroundAllParticles(stl::Mesh mesh);
