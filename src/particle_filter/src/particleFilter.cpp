@@ -177,13 +177,17 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
 
 void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
   fullStateFilter.estimateHole(x_mean, x_est_stat);
+  cspace trueConfig = {1.1192, -0.025, 0.13, 0, 0, 0};
+  computeHoleError(fullStateFilter.holeConfigs, trueConfig, 0.01, 0.035, 0.8, 20);
 }
 
 
-void particleFilter::computeHoleError(Particles &holeConfig, cspace &trueConfig, double circle_radius = 0.001, double hole_depth = 0.035
-                                      double fit_ratio = 0.8, int NUM_POLY_ITERATIONS = 20, double BEAM_STEPSIZE 0.0001) {
-  double ray_start[3] = {1.1192, 0, 0.13};
-  double ray_end[3] = {1.1192, -0.15, 0.13};
+void particleFilter::computeHoleError(Particles &holeConfigs, cspace &trueConfig, double circle_radius, double hole_depth,
+                                      double fit_ratio, int num_poly_iterations) {
+  // double ray_start[3] = {1.1192, 0, 0.13};
+  // double ray_end[3] = {1.1192, -0.15, 0.13};
+  double ray_start[3] = {0, 0.05, 0};
+  double ray_end[3] = {0, -0.1, 0};
   double circle_center[2][3] = {{0, 0, 0}, {0, 1, 0}};
   // double trans_start[3];
   // double trans_end[3];
@@ -193,12 +197,12 @@ void particleFilter::computeHoleError(Particles &holeConfig, cspace &trueConfig,
   // Transform(ray_end, particles_mean, trans_end);
   
   double rate = 0;
-  double rate2 = 0;
-  double cumError = 0;
-  circleEllipse cEllipse(NUM_POLY_ITERATIONS);
+  double fitted_radius = fit_ratio * circle_radius;
+  // double cumError = 0;
+  circleEllipse cEllipse(num_poly_iterations);
   for (int ii = 0; ii < numParticles; ii ++) {
 
-    Transform(circle_center, holeConfig[ii], temp_center);
+    Transform(circle_center, holeConfigs[ii], temp_center);
     inverseTransform(temp_center, trueConfig, trans_center);
     Eigen::Vector3d proj_vec;
     proj_vec << 0, 1, 0;
@@ -219,107 +223,106 @@ void particleFilter::computeHoleError(Particles &holeConfig, cspace &trueConfig,
            sin(minor_angle), cos(minor_angle);
 
     Eigen::Vector2d projected_ray, vert_dir, hori_dir;
-    projected_ray << RAY_START[1] - trans_center[0][0], RAY_START[2] - trans_center[0][2];
+    projected_ray << ray_start[0] + trans_center[0][0], ray_start[2] - trans_center[0][2];
     projected_ray = rot * projected_ray;
 
-    if (cEllipse.circleInEllipse(BEAM_RADIUS, projected_ray(0), projected_ray(1), circle_radius, minor_length) &&
-      cEllipse.circleInEllipse(BEAM_RADIUS, projected_ray(0), projected_ray(1) + depth_offset, circle_radius, minor_length)) {
+    if (cEllipse.circleInEllipse(fitted_radius, projected_ray(0), projected_ray(1), circle_radius, minor_length) &&
+      cEllipse.circleInEllipse(fitted_radius, projected_ray(0), projected_ray(1) + depth_offset, circle_radius, minor_length)) {
       rate ++;
       // cout << "hole position: " << endl << trans_center[0][1] << "   " << trans_center[0][2] << endl;
       // cout << "Angle diff: " << endl << center_vec << endl;
       // cout << "minor_length: " << minor_length << endl;
-      vert_dir << 0,1;
-      hori_dir << 1,0;
-      vert_dir = rot * vert_dir;
-      hori_dir = rot * hori_dir;
-      double xstep_size = BEAM_STEPSIZE * vert_dir(0);
-      double ystep_size = BEAM_STEPSIZE * vert_dir(1);
-      // // cout << "Center Dir: " << trans_center[1][0] << "  "
-      // //                      << trans_center[1][1] << "  "
-      // //                      << trans_center[1][2] << endl;
-      // cout << "Projected Ray: " << endl << projected_ray << endl;
+      // vert_dir << 0,1;
+      // hori_dir << 1,0;
+      // vert_dir = rot * vert_dir;
+      // hori_dir = rot * hori_dir;
+      // double xstep_size = BEAM_STEPSIZE * vert_dir(0);
+      // double ystep_size = BEAM_STEPSIZE * vert_dir(1);
+      // // // cout << "Center Dir: " << trans_center[1][0] << "  "
+      // // //                      << trans_center[1][1] << "  "
+      // // //                      << trans_center[1][2] << endl;
+      // // cout << "Projected Ray: " << endl << projected_ray << endl;
 
-      bool collided = false;
+      // bool collided = false;
       
-      double estX = 0;
-      double estY = 0;
-      Eigen::Vector2d meanEst;
-      Eigen::Matrix2d invRot = rot.inverse();
-      double h = minor_length;
-      double w = circle_radius;
-      double r = BEAM_RADIUS;
-      double x1 = projected_ray(0);
-      double y1 = projected_ray(1);
-      while (abs(x1) <= w && abs(y1) <= h) {
-        if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
-            cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
-          meanEst << x1, y1;
-          // cout << "y top   ";
-          break;
-        }
-        x1 += xstep_size;
-        y1 += ystep_size;
-      }
-      x1 = projected_ray(0) - xstep_size;
-      y1 = projected_ray(1) - ystep_size;
-      while (abs(x1) <= w && abs(y1) <= h) {
-        if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
-              cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
-            meanEst(0) += x1;
-            meanEst(1) += y1;
-            meanEst /= 2;
-            meanEst = invRot * meanEst;
-            estY = meanEst(1);
-            // cout << "y bot   ";
-            break;
-        } 
-        x1 -= xstep_size;
-        y1 -= ystep_size;
-      }
-      xstep_size = BEAM_STEPSIZE * hori_dir(0);
-      ystep_size = BEAM_STEPSIZE * hori_dir(1);
-      x1 = projected_ray(0);
-      y1 = projected_ray(1);
-      while (abs(x1) <= w && abs(y1) <= h) {
-        if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
-            cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
-          meanEst << x1, y1;
-          // cout << "x right   ";
-          break;
-        }
-        x1 += xstep_size;
-        y1 += ystep_size;
-      }
-      x1 = projected_ray(0) - xstep_size;
-      y1 = projected_ray(1) - ystep_size;
-      while (abs(x1) <= w && abs(y1) <= h) {
-        if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
-            cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
-          meanEst(0) += x1;
-          meanEst(1) += y1;
-          meanEst /= 2;
-          meanEst = invRot * meanEst;
-          estX = meanEst(0);
-          // cout << "x left" << endl;
-          break;
-        }
-        x1 -= xstep_size;
-        y1 -= ystep_size;
-      }
-      //cout << "X: " << estX << "    Y: " << estY << endl;
-      //cout << "Depth offset: " << depth_offset << endl;
-      cumError += sqrt(SQ(estX) + SQ(estY));
+      // double estX = 0;
+      // double estY = 0;
+      // Eigen::Vector2d meanEst;
+      // Eigen::Matrix2d invRot = rot.inverse();
+      // double h = minor_length;
+      // double w = circle_radius;
+      // double r = BEAM_RADIUS;
+      // double x1 = projected_ray(0);
+      // double y1 = projected_ray(1);
+      // while (abs(x1) <= w && abs(y1) <= h) {
+      //   if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
+      //       cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
+      //     meanEst << x1, y1;
+      //     // cout << "y top   ";
+      //     break;
+      //   }
+      //   x1 += xstep_size;
+      //   y1 += ystep_size;
+      // }
+      // x1 = projected_ray(0) - xstep_size;
+      // y1 = projected_ray(1) - ystep_size;
+      // while (abs(x1) <= w && abs(y1) <= h) {
+      //   if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
+      //         cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
+      //       meanEst(0) += x1;
+      //       meanEst(1) += y1;
+      //       meanEst /= 2;
+      //       meanEst = invRot * meanEst;
+      //       estY = meanEst(1);
+      //       // cout << "y bot   ";
+      //       break;
+      //   } 
+      //   x1 -= xstep_size;
+      //   y1 -= ystep_size;
+      // }
+      // xstep_size = BEAM_STEPSIZE * hori_dir(0);
+      // ystep_size = BEAM_STEPSIZE * hori_dir(1);
+      // x1 = projected_ray(0);
+      // y1 = projected_ray(1);
+      // while (abs(x1) <= w && abs(y1) <= h) {
+      //   if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
+      //       cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
+      //     meanEst << x1, y1;
+      //     // cout << "x right   ";
+      //     break;
+      //   }
+      //   x1 += xstep_size;
+      //   y1 += ystep_size;
+      // }
+      // x1 = projected_ray(0) - xstep_size;
+      // y1 = projected_ray(1) - ystep_size;
+      // while (abs(x1) <= w && abs(y1) <= h) {
+      //   if (cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1, w, h) || 
+      //       cEllipse.circleEllipseIntersection(BEAM_RADIUS, x1, y1 + depth_offset, w, h)) {
+      //     meanEst(0) += x1;
+      //     meanEst(1) += y1;
+      //     meanEst /= 2;
+      //     meanEst = invRot * meanEst;
+      //     estX = meanEst(0);
+      //     // cout << "x left" << endl;
+      //     break;
+      //   }
+      //   x1 -= xstep_size;
+      //   y1 -= ystep_size;
+      // }
+      // //cout << "X: " << estX << "    Y: " << estY << endl;
+      // //cout << "Depth offset: " << depth_offset << endl;
+      // cumError += sqrt(SQ(estX) + SQ(estY));
 
     }
-    rate2 ++;
   }
 
-  cumError /= rate;
+  // cumError /= rate;
   rate /= numParticles;
-  rate2 /= numParticles;
-  cout << "Average Error: " << cumError << endl;
+  // rate2 /= numParticles;
+  // cout << "Average Error: " << cumError << endl;
   cout << "Succ Rate: " << rate << endl;
-  cout << "Succ Rate2: " << rate2 << endl;
+  // cout << "Succ Rate2: " << rate2 << endl;
 
 }
 
