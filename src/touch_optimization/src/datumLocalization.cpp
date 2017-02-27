@@ -280,7 +280,8 @@ void fixedSelectionEdge(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_star
  * Randomly chooses vectors, gets the Information Gain for each of 
  *  those vectors, and returns the ray (start and end) with the highest information gain
  */
-void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf::Point &best_start, tf::Point &best_end, int &bestDatum, int &bestIdx)
+void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf::Point &best_start, tf::Point &best_end, 
+                          int &bestDatum, int &bestIdx, std::vector<tf::Transform> holeParticles)
 {
   int index;
   double bestIG = 0;
@@ -294,7 +295,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   Eigen::Vector3d end;
   vector<CalcEntropy::ConfigDist> distsToParticles;
   int datum = 0;
-  for(int i=0; i<600; i++){
+  for(int i=0; i<100; i++){
     index = int_rand(rd);
     if (index == 0) {
       double x = rand(rd) * 0.9 + 0.1;
@@ -360,7 +361,8 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
     tf_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     Ray measurement(tf_start, tf_end);
     // auto timer_begin = std::chrono::high_resolution_clock::now();
-    double IG = rayts[index]->getIG(measurement, 0.01, 0.002);
+    double IG = rayts[index]->getFullStateIG(measurement, 0.01, 0.002, holeParticles);
+    // double IG = rayts[index]->getIG(measurement, 0.01, 0.002);
     // plt.plotRay(measurement);
     // plt.labelRay(measurement, IG);
     // auto timer_end = std::chrono::high_resolution_clock::now();
@@ -409,6 +411,7 @@ int main(int argc, char **argv)
   for (std::string &filename : datums)
     rayts.push_back(new RayTracer(filename));
 
+  ParticleHandler particleHandler("hole");
   std::random_device rd;
   std::normal_distribution<double> randn(0.0,0.00000001);
 
@@ -437,7 +440,7 @@ int main(int argc, char **argv)
     tf::Point start, end;
     int datum, datumidx;
     // randomSelection(plt, rayt, start, end);
-    randomSelectionDatum(plt, rayts, start, end, datum, datumidx);
+    randomSelectionDatum(plt, rayts, start, end, datum, datumidx, particleHandler.getParticles());
 
     Ray measurement(start, end);
     

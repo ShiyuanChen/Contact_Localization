@@ -3,6 +3,10 @@
 #include <vector>
 #include <map>
 
+struct Bin {
+  // std::vector<CalcEntropy::ConfigDist> element;
+  std::vector<int> particleIds;
+};
 
 namespace CalcEntropy{
   typedef std::vector<int> BinId;
@@ -33,8 +37,11 @@ namespace CalcEntropy{
   ProcessedHistogram processMeasurements(std::vector<ConfigDist> p, double binSize, int numConfigs);
   ProcessedHistogram combineHist(const ProcessedHistogram &hist1, 
 				 const ProcessedHistogram &hist2);
+  void getHist(std::vector<ConfigDist> &distances, double binSize, std::vector<Bin> &hist);
   double calcCondDisEntropy(const ProcessedHistogram &procHist);
+  double calcCondDisEntropyPerBin(const std::vector<Bin> &hist);
   double calcIG(const std::vector<ConfigDist> &distances, double binSize, int numParticles);
+  double calcFullStateIG(double H_Y_given_X, int numParticles);
   double calcIG(const ProcessedHistogram &procHist, int numParticles);
 
 }

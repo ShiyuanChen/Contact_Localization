@@ -4,11 +4,8 @@
 #include <math.h>
 #include <ctime>
 #include <cmath>
+#include <unordered_set>
 
-struct Bin {
-  // std::vector<CalcEntropy::ConfigDist> element;
-  std::vector<int> particleIds;
-};
 
 /*
  *  Get the min and max of a sorted ConfigDist vector
@@ -202,6 +199,37 @@ namespace CalcEntropy{
     return procHist;
   }
 
+  // ProcessedHistogram  processMeasurements(std::vector<ConfigDist> p, double binSize, int numParticles){
+  //   std::sort(p.begin(), p.end(), &distOrdering);
+
+  //   std::vector<Bin> hist;
+  //   histogram(p, binSize, hist);
+
+  //   CalcEntropy::ProcessedHistogram procHist;
+  //   procHist.particle.resize(numParticles);
+  //   processHistogram(hist, procHist, p.size()/numParticles);
+  //   // printParticles(procHist);
+  //   return procHist;
+  // }
+
+  void getHist(std::vector<ConfigDist> &p, double binSize, std::vector<Bin> &hist) {
+    std::sort(p.begin(), p.end(), &distOrdering);
+    histogram(p, binSize, hist);
+  }
+
+  // int addToFullBin(std::unordered_set<string> *set, cspace config)
+  // {
+  //   string s = "";
+  //   for (int i = 0; i < 6; i++) {
+  //     s += floor(config[i] / DISPLACE_INTERVAL);
+  //     s += ":";
+  //   }
+  //   if (set->find(s) == set->end()) {
+  //     set->insert(s);
+  //     return 1;
+  //   }
+  //   return 0;
+  // }
 
   /*
    *  Calculates conditional discrete entropy of histogram of distance
@@ -211,17 +239,37 @@ namespace CalcEntropy{
     
     for(const auto &b : procHist.bin){
       for(const auto &p : b.second.particles){
-	double particleProb = p.second;
-	entropy -= b.second.binProbability * particleProb * log2(particleProb);
+      	double particleProb = p.second;
+      	entropy -= b.second.binProbability * particleProb * log2(particleProb);
       }
     }
     return entropy;
   }
 
+  double calcCondDisEntropyPerBin(const std::vector<Bin> &hist){
+    double entropy = 0;
+    double totalcount = 0.0;
+    for(const Bin &b : hist){
+      totalcount += b.particleIds.size();
+    }
+    for(const Bin &b : hist){
+      double binProb = (double) (b.particleIds.size()) / totalcount;
+      entropy -= binProb * log2(binProb);
+    }
+    return entropy;
+  }
   
   double calcIG(const std::vector<ConfigDist> &distances, double binSize, int numParticles)
   {
     return calcIG(processMeasurements(distances, binSize, numParticles), numParticles);
+  }
+
+  double calcFullStateIG(double H_Y_given_X, int numParticles)
+  {
+    double H_Y = -log2(1.0/(double)numParticles);
+    // std::cout << "H_Y: " << H_Y << "    H_Y_given_X: " << H_Y_given_X << std::endl;
+    // printBins(procHist);
+    return H_Y - H_Y_given_X;
   }
 
   double calcIG(const ProcessedHistogram &procHist, int numParticles){
