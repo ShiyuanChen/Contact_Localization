@@ -52,6 +52,18 @@ particleFilter::particleFilter(int n_particles, jointCspace b_init[2],
   double est_diff = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2])
                        + SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[5] - trueConfig[5]));
   cout << est_diff << endl;
+  double est_diff_trans = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2]));
+  double est_diff_rot = sqrt(SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[5] - trueConfig[5]));
+  ofstream myfile;
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff.csv", ios::out|ios::app);
+  myfile << est_diff << ",";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_trans.csv", ios::out|ios::app);
+  myfile << est_diff_trans << ",";
+  myfile.close();
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_rot.csv", ios::out|ios::app);
+  myfile << est_diff_rot << ",";
+  myfile.close();
   // particles.resize(numParticles);
   // particlesPrev.resize(numParticles);
 
@@ -142,7 +154,7 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
     converge_count ++;
   }
   double est_diff_trans = sqrt(SQ(particles_mean[0] - trueConfig[0]) + SQ(particles_mean[1] - trueConfig[1]) + SQ(particles_mean[2] - trueConfig[2]));
-  double est_diff_rot = sqrt(SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[4] - trueConfig[4]) + SQ(particles_mean[5] - trueConfig[5]));
+  double est_diff_rot = sqrt(SQ(particles_mean[3] - trueConfig[3]) + SQ(particles_mean[5] - trueConfig[5]));
 
   cout << "Converge count: " << converge_count << endl;
   cout << "Elapsed time: " << std::chrono::duration_cast<std::chrono::milliseconds>(timer_dur).count() << endl;
@@ -178,11 +190,14 @@ void particleFilter::addObservation(double obs[2][3], vector<vec4x3> &mesh, dist
 void particleFilter::estimateGaussian(cspace &x_mean, cspace &x_est_stat) {
   fullStateFilter.estimateHole(x_mean, x_est_stat);
   cspace trueConfig = {1.1192, -0.025, 0.13, 0, 0, 0};
-  computeHoleError(fullStateFilter.holeConfigs, trueConfig, 0.01, 0.035, 0.8, 20);
+  ofstream myfile;
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/rate.csv", ios::out|ios::app);
+  myfile << computeHoleError(fullStateFilter.holeConfigs, trueConfig, 0.01, 0.035, 0.8, 20) << ",";
+  myfile.close();
 }
 
 
-void particleFilter::computeHoleError(Particles &holeConfigs, cspace &trueConfig, double circle_radius, double hole_depth,
+double particleFilter::computeHoleError(Particles &holeConfigs, cspace &trueConfig, double circle_radius, double hole_depth,
                                       double fit_ratio, int num_poly_iterations) {
   // double ray_start[3] = {1.1192, 0, 0.13};
   // double ray_end[3] = {1.1192, -0.15, 0.13};
@@ -323,7 +338,7 @@ void particleFilter::computeHoleError(Particles &holeConfigs, cspace &trueConfig
   // cout << "Average Error: " << cumError << endl;
   cout << "Succ Rate: " << rate << endl;
   // cout << "Succ Rate2: " << rate2 << endl;
-
+  return rate;
 }
 
 

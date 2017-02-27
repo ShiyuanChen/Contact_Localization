@@ -28,7 +28,7 @@ class particleFilter
   void getAllParticles(Particles &particles_dest, int idx);
   void getHoleParticles(Particles &particles_dest);
   int getNumParticles();
-  void computeHoleError(Particles &holeConfigs, cspace &trueConfig, double circle_radius = 0.001, double hole_depth = 0.035,
+  double computeHoleError(Particles &holeConfigs, cspace &trueConfig, double circle_radius = 0.001, double hole_depth = 0.035,
                                       double fit_ratio = 0.8, int num_poly_iterations = 20);
 
  protected:

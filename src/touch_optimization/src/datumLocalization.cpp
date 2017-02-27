@@ -479,6 +479,9 @@ int main(int argc, char **argv)
     i ++;
   }
   std::ofstream myfile;
+  myfile.open("/home/shiyuan/Documents/ros_marsarm/rate.csv", std::ios::out|std::ios::app);
+  myfile << "\n";
+  myfile.close();
   myfile.open("/home/shiyuan/Documents/ros_marsarm/diff.csv", std::ios::out|std::ios::app);
   myfile << "\n";
   myfile.close();
