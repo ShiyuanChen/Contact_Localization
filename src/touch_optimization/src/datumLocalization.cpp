@@ -410,7 +410,7 @@ int main(int argc, char **argv)
     rayts.push_back(new RayTracer(filename));
 
   std::random_device rd;
-  std::normal_distribution<double> randn(0.0,0.00000001);
+  std::normal_distribution<double> randn(0.0,0.0001);
 
   ROS_INFO("Running...");
 

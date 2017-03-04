@@ -287,7 +287,7 @@ void visualize()
 #endif
 
 PFilterTest::PFilterTest(int n_particles, jointCspace b_init[2], std::vector<std::string> datum_name_vec) :
-  pFilter_(n_particles, b_init, 0.0005, 0.000),
+  pFilter_(n_particles, b_init, 0.0002, 0.000),
   num_voxels{200, 200, 200}//,
   // pFilter_(n_particles, b_init, 0.001, 0.0025, 0.0001, 0.00),
   // num_voxels{300, 300, 300}//,
