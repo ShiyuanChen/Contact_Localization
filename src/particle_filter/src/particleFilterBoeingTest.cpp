@@ -287,7 +287,7 @@ void visualize()
 #endif
 
 PFilterTest::PFilterTest(int n_particles, jointCspace b_init[2], std::vector<std::string> datum_name_vec) :
-  pFilter_(n_particles, b_init, 0.0002, 0.000),
+  pFilter_(n_particles, b_init, 0.0008, 0.000),
   num_voxels{200, 200, 200}//,
   // pFilter_(n_particles, b_init, 0.001, 0.0025, 0.0001, 0.00),
   // num_voxels{300, 300, 300}//,
@@ -308,9 +308,6 @@ PFilterTest::PFilterTest(int n_particles, jointCspace b_init[2], std::vector<std
   // sub_init = n.subscribe("/particle_filter_init", 1, &PFilterTest::initDistribution, this);
   sub_request_particles = n.subscribe("/request_particles", 1, &PFilterTest::sendParticles, this);
   srv_add_obs = n.advertiseService("/particle_filter_add", &PFilterTest::addObs, this);
-  // pub_particles = n.advertise<geometry_msgs::PoseArray>("/wood_boeing/particles_from_filter", 5);
-  // pub_particles1 = n.advertise<geometry_msgs::PoseArray>("/right_datum/particles_from_filter", 5);
-  // pub_particles2 = n.advertise<geometry_msgs::PoseArray>("/left_datum/particles_from_filter", 5);
   pub_hole = n.advertise<geometry_msgs::PoseArray>("/hole/particles_from_filter", 5);
   for (int i = 0; i < datum_name_vec.size(); i ++) {
     pub_particles_vec.push_back(n.advertise<geometry_msgs::PoseArray>("/" + datum_name_vec[i] + "/particles_from_filter", 5));
@@ -395,12 +392,11 @@ int main(int argc, char **argv)
 
   ROS_INFO("Testing particle filter");
   
-  std::vector<std::string> datum_name_vec;// = {"wood_boeing", "front_datum", "top_datum", "right_datum", "left_datum", "bottom_datum"};
+  std::vector<std::string> datum_name_vec;
   if(!n.getParam("/datum_list", datum_name_vec)){
     ROS_INFO("Failed to get param: datum_list");
   }
-  // std::string names[] = {"wood_boeing", "front_datum", "top_datum", "right_datum", "left_datum"};
-  // datum_name_vec.assign(names, names + 5);
+
   jointCspace b_Xprior[2];	
   computeInitialDistribution(b_Xprior, datum_name_vec, n);
   PFilterTest pFilterTest(NUM_PARTICLES, b_Xprior, datum_name_vec);

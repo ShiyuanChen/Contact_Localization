@@ -38,7 +38,7 @@
   </rosparam>
 
   <rosparam param="datum_list">
-    ["front_datum", "top_datum", "right_datum", "left_datum", "bottom_datum", "J1_section"]
+    ["front_datum", "top_datum", "right_datum", "bottom_datum", "J1_section"]
   </rosparam>
 
   <include file="$(find touch_optimization)/launch/datum.launch"> 
@@ -51,10 +51,6 @@
 
   <include file="$(find touch_optimization)/launch/datum.launch"> 
     <arg name="datumName" value="right_datum"/> 
-  </include>
-
-  <include file="$(find touch_optimization)/launch/datum.launch"> 
-    <arg name="datumName" value="left_datum"/> 
   </include>
 
   <include file="$(find touch_optimization)/launch/datum.launch"> 

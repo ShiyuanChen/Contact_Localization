@@ -289,12 +289,12 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   bestIG = 0;
   std::random_device rd;
   std::uniform_real_distribution<double> rand(0, 1);
-  std::uniform_int_distribution<> int_rand(0, 5);
+  std::uniform_int_distribution<> int_rand(0, 4);
   Eigen::Vector3d start;
   Eigen::Vector3d end;
   vector<CalcEntropy::ConfigDist> distsToParticles;
   int datum = 0;
-  for(int i=0; i<600; i++){
+  for(int i=0; i<400; i++){
     index = int_rand(rd);
     if (index == 0) {
       double x = rand(rd) * 0.9 + 0.1;
@@ -303,7 +303,8 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
       end << x, -1, z;
       datum = 0;
     } else if (index == 1) {
-      double x = rand(rd) * 1.19 + 0.01;
+      // double x = rand(rd) * 1.19 + 0.01;
+      double x = rand(rd) * 0.89 + 0.3;
       double y = rand(rd) * 0.058 - 0.06;
       start << x, y, 1;
       end << x, y, -1;
@@ -311,21 +312,15 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
     } else if (index == 2) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.21 + 0.01;
-      start << -1, y, z;
-      end << 0.5, y, z;
-      datum = 2;
-    } else if (index == 3) {
-      double y = rand(rd) * 0.035 - 0.06;
-      double z = rand(rd) * 0.21 + 0.01;
       start << 2, y, z;
       end << 0.5, y, z;
-      datum = 3;
-    } else if (index == 4){
+      datum = 2;
+    } else if (index == 3){
       double x = rand(rd) * 1.19 + 0.01;
       double y = rand(rd) * 0.058 - 0.06;
       start << x, y, -1;
       end << x, y, 1;
-      datum = 4;
+      datum = 3;
     } else {
       int subidx = int_rand(rd);
       if (subidx < 3) {
@@ -333,7 +328,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
         double z = rand(rd) * 0.20 + 0.01;
         start << -0.5, y, z;
         end << 1, y, z;
-      } else if (subidx < 5) {
+      } else if (subidx < 4) {
         double x = rand(rd) * 0.02 + 0.32;
         double y = rand(rd) * 0.28 - 0.36;
         start << x, y, 0.5;
@@ -344,7 +339,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
         start << x, -0.5, z;
         end << x, 0.5, z;
       }
-      datum = 5;
+      datum = 4;
     }
     // } else {
     //   double x = rand(rd) * 0.9 + 0.1;
@@ -360,7 +355,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
     tf_end.setValue(end(0, 0), end(1, 0), end(2, 0));
     Ray measurement(tf_start, tf_end);
     // auto timer_begin = std::chrono::high_resolution_clock::now();
-    double IG = rayts[index]->getIG(measurement, 0.01, 0.002);
+    double IG = rayts[index]->getIG(measurement, 0.01, 0.002) * (datum > 2?0.6:1);
     // plt.plotRay(measurement);
     // plt.labelRay(measurement, IG);
     // auto timer_end = std::chrono::high_resolution_clock::now();
@@ -381,7 +376,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
      best_start.getX(), best_start.getY(), best_start.getZ(),
      best_end.getX(), best_end.getY(), best_end.getZ());
   plt.plotRay(Ray(best_start, best_end));
-
+  // plt.labelRay(Ray(best_start, best_end), bestIG);
   // Ray measurement(best_start, best_end);
   // rayts[bestIdx]->getIG(measurement, distsToParticles, 0.01, 0.002);
   // std::cout << "Verify: " << rayts[bestIdx]->getIG(measurement, distsToParticles, 0.01, 0.002) << " == " << bestIG << " ?" << std::endl;
@@ -402,8 +397,7 @@ int main(int argc, char **argv)
   if(!n.getParam("/datum_list", datums)){
     ROS_INFO("Failed to get param: datum_list");
   }
-  // std::vector<std::string> datums = {"front_datum", "right_datum", "left_datum",
-  //           "top_datum", "bottom_datum"};
+
   std::vector<RayTracer*> rayts;
 
   for (std::string &filename : datums)
@@ -452,9 +446,9 @@ int main(int argc, char **argv)
   std::cout << "Intersection at: " << intersection.getX() << "  " << intersection.getY() << "   " << intersection.getZ() << std::endl;
     tf::Point ray_dir(end.x()-start.x(),end.y()-start.y(),end.z()-start.z());
     ray_dir = ray_dir.normalize();
-    obs.x=intersection.getX() + randn(rd); 
-    obs.y=intersection.getY() + randn(rd); 
-    obs.z=intersection.getZ() + randn(rd);
+    obs.x=intersection.getX(); 
+    obs.y=intersection.getY(); 
+    obs.z=intersection.getZ();
     dir.x=ray_dir.x();
     dir.y=ray_dir.y();
     dir.z=ray_dir.z();

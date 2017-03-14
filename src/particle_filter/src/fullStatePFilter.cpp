@@ -74,19 +74,11 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
 
     // Right Plane
     for (int j = 0; j < cdim; j ++) {
-      relativeConfig[j] = relativeConfig[j] + b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
+      relativeConfig[j] = frontConfig[j] + b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, rightPlaneConfig);
     copyParticles(rightPlaneConfig, fullJointPrev[i], 2 * cdim);
-
-    // Left Plane
-    for (int j = 0; j < cdim; j ++) {
-      relativeConfig[j] = relativeConfig[j] + b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
-    }
-    baseConfig = tmpConfig;
-    transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
-    copyParticles(leftPlaneConfig, fullJointPrev[i], 3 * cdim);
 
     // Bottom Plane
     for (int j = 0; j < cdim; j ++) {
@@ -94,7 +86,7 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
-    copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);
+    copyParticles(leftPlaneConfig, fullJointPrev[i], 3 * cdim);
 
     // J1 Section
     for (int j = 0; j < cdim; j ++) {
@@ -102,10 +94,10 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, leftPlaneConfig);
-    copyParticles(leftPlaneConfig, fullJointPrev[i], 5 * cdim);
+    copyParticles(leftPlaneConfig, fullJointPrev[i], 4 * cdim);
 
     // Hole 
-    generateHole(fullJointPrev[i], 2, 1, 0, 1.1192, 0.1, holeConfigs[i]);
+    generateHole(fullJointPrev[i], 2, 1, 0, -0.1, 0.13, holeConfigs[i]);
 
   }
   fullJoint = fullJointPrev;
@@ -200,7 +192,7 @@ bool fullStatePFilter::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh,
   Eigen::Vector3d touch_dir;
   int num_bins = 0;
   int count_bar = 0;
-  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155/1.7;//2.1;
+  double coeff = pow(4.0 / ((fulldim + 2.0) * numParticles), 2.0/(fulldim + 4.0)) /1.2155/1.2155/2.5;//2.1;
   Eigen::MatrixXd H_cov = coeff * cov_mat;
 
 
@@ -269,7 +261,7 @@ bool fullStatePFilter::updateFullJoint(double cur_M[2][3], vector<vec4x3> &mesh,
       for (int j = 0; j < fulldim; j++) {
         fullJoint[i][j] = tempFullState[j];
       }
-      generateHole(fullJoint[i], 2, 1, 0, 1.1192, 0.1, holeConfigs[i]);
+      generateHole(fullJoint[i], 2, 1, 0, -0.1, 0.13, holeConfigs[i]);
       if (checkEmptyBin(&bins, tempState) == 1) {
         num_bins++;
         numParticles = min2(maxNumParticles, max2(((num_bins - 1) * 2), N_MIN));
@@ -341,8 +333,8 @@ void fullStatePFilter::generateHole(jointCspace &joint, int right_datum, int top
   cspace baseConfig1 = {joint[datum1Start], joint[datum1Start + 1], joint[datum1Start + 2], joint[datum1Start + 3], joint[datum1Start + 4], joint[datum1Start + 5]};
   cspace baseConfig2 = {joint[datum2Start], joint[datum2Start + 1], joint[datum2Start + 2], joint[datum2Start + 3], joint[datum2Start + 4], joint[datum2Start + 5]};
 
-  ta << 0, -0.025, 0;
-  tb << 0, -0.025, 0.23;
+  ta << 1.2192, -0.025, 0;
+  tb << 1.2192, -0.025, 0.23;
   Transform(ta, baseConfig1, pa1);
   Transform(tb, baseConfig1, pb1);
   ta << 0, -0.025, 0.23;
