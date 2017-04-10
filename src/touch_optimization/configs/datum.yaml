@@ -8,22 +8,23 @@
 #   particle_frame: [0, 0.0, 0, 0, 0, 0]
 
 front_datum:
-  color: [0.5, 0.5, 0.5, 0.1]
+  color: [0.5, 0.5, 0.5, 0.08]
   # prior: [0, 0.0, 0, 0, 0, 0]
   # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-  prior: [0, -0.023, 0, 0, 0.005, 0.01]
-  initial_uncertainties: [0.04, 0.03, 0.04, 0.03, 0.045, 0.03]
+  prior: [0, -0.0, 0, 0, 0.005, 0.0]
+  # initial_uncertainties: [0.04, 0.03, 0.04, 0.03, 0.045, 0.03]
+  initial_uncertainties: [0.01, 0.0, 0.01, 0.0, 0.01, 0.0]
   localization_object: front_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]
 
 top_datum:
-  color: [0.5, 0.5, 0, 0.3]
+  color: [0.5, 0.5, 0.1, 0.3]
   # prior: [0, 0, 0, 0, 0, 0]
   # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-  prior: [0, 0, 0.005, 0.0, 0.0, 0]
-  initial_uncertainties: [0.0, 0.0, 0.015, 0.0, 0.0, 0.0]
+  prior: [0, 0, 0.00, 0.0, 0.0, 0]
+  initial_uncertainties: [0.03, 0.0, 0.04, 0.0, 0.08, 0.0]
   localization_object: top_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
@@ -34,7 +35,7 @@ right_datum:
   # prior: [0, 0, 0, 0, 0, 0]
   # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   prior: [0.005, 0, 0, 0, -0.00, 0.0]
-  initial_uncertainties: [0.02, 0.0, 0.0, 0.0, 0.0, 0.0]
+  initial_uncertainties: [0.005, 0.0, 0.0, 0.0, 0.01, 0.0]
   localization_object: right_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
@@ -46,14 +47,14 @@ bottom_datum:
   # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   
   prior: [0, 0, 0.005, -0, 0.0, 0]
-  initial_uncertainties: [0.0, 0.0, 0.01, 0.01, 0.01, 0.0]
+  initial_uncertainties: [0.0, 0.0, 0.01, 0.01, 0.02, 0.0]
   localization_object: bottom_datum
   particle_frame: [0, 0, 0, 0, 0, 0]
   true_frame: [0, 0, 0, 0, 0, 0]
   true_state: [0, 0, 0, 0, 0, 0]
 
 J1_section:
-  color: [0.5, 0.5, 0, 0.1]
+  color: [0.5, 0.5, 0.5, 0.08]
   # prior: [0, 0, 0, 0, 0, 0]
   # initial_uncertainties: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   prior: [0.0, 0.00, -0.00, 0.001, 0, -0.001]

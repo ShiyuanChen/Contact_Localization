@@ -280,9 +280,9 @@ void fixedSelectionEdge(PlotRayUtils &plt, RayTracer &rayt, tf::Point &best_star
  * Randomly chooses vectors, gets the Information Gain for each of 
  *  those vectors, and returns the ray (start and end) with the highest information gain
  */
-void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf::Point &best_start, tf::Point &best_end, int &bestDatum, int &bestIdx)
+void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf::Point &best_start, tf::Point &best_end, int &bestDatum, int &bestIdx, int index)
 {
-  int index;
+  // int index;
   double bestIG = 0;
   tf::Point tf_start;
   tf::Point tf_end;
@@ -295,7 +295,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   vector<CalcEntropy::ConfigDist> distsToParticles;
   int datum = 0;
   for(int i=0; i<400; i++){
-    index = int_rand(rd);
+    // index = int_rand(rd);
     if (index == 0) {
       double x = rand(rd) * 0.9 + 0.1;
       double z = rand(rd) * 0.18 + 0.03;
@@ -304,16 +304,16 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
       datum = 0;
     } else if (index == 1) {
       // double x = rand(rd) * 1.19 + 0.01;
-      double x = rand(rd) * 0.89 + 0.3;
+      double x = rand(rd) * 0.1 + 0.5;
       double y = rand(rd) * 0.058 - 0.06;
-      start << x, y, 1;
-      end << x, y, -1;
+      start << x, y, 0.32;
+      end << x, y, 0.1;
       datum = 1;
     } else if (index == 2) {
       double y = rand(rd) * 0.035 - 0.06;
       double z = rand(rd) * 0.21 + 0.01;
-      start << 2, y, z;
-      end << 0.5, y, z;
+      start << 1.3, y, z;
+      end << 1.1, y, z;
       datum = 2;
     } else if (index == 3){
       double x = rand(rd) * 1.19 + 0.01;
@@ -375,7 +375,7 @@ void randomSelectionDatum(PlotRayUtils &plt, std::vector<RayTracer*> &rayts, tf:
   ROS_INFO("Ray is: %f, %f, %f.  %f, %f, %f", 
      best_start.getX(), best_start.getY(), best_start.getZ(),
      best_end.getX(), best_end.getY(), best_end.getZ());
-  plt.plotRay(Ray(best_start, best_end));
+  // plt.plotRay(Ray(best_start, best_end));
   // plt.labelRay(Ray(best_start, best_end), bestIG);
   // Ray measurement(best_start, best_end);
   // rayts[bestIdx]->getIG(measurement, distsToParticles, 0.01, 0.002);
@@ -424,14 +424,14 @@ int main(int argc, char **argv)
 
   int i = 0;
   //for(int i=0; i<20; i++){
-  while (i < 20) {
+  while (i < 2) {
     ros::Duration(1).sleep();
     //tf::Point start(0.95,0,-0.15);
     //tf::Point end(0.95,2,-0.15);
     tf::Point start, end;
     int datum, datumidx;
     // randomSelection(plt, rayt, start, end);
-    randomSelectionDatum(plt, rayts, start, end, datum, datumidx);
+    randomSelectionDatum(plt, rayts, start, end, datum, datumidx, i + 1);
 
     Ray measurement(start, end);
     
@@ -470,24 +470,29 @@ int main(int argc, char **argv)
       ros::spinOnce();
       ros::Duration(.1).sleep();
     }
+    // tf::Point hidden_start;
+    // tf::Point hidden_end;
+    // hidden_start.setValue(100, 100, 100);
+    // hidden_end.setValue(100, 100, 100);
+    // plt.plotRay(Ray(hidden_start, hidden_end));
     i ++;
   }
-  std::ofstream myfile;
-  myfile.open("/home/shiyuan/Documents/ros_marsarm/rate.csv", std::ios::out|std::ios::app);
-  myfile << "\n";
-  myfile.close();
-  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff.csv", std::ios::out|std::ios::app);
-  myfile << "\n";
-  myfile.close();
-  myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", std::ios::out|std::ios::app);
-  myfile << "\n";
-  myfile.close();
-  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_trans.csv", std::ios::out|std::ios::app);
-  myfile << "\n";
-  myfile.close();
-  myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_rot.csv", std::ios::out|std::ios::app);
-  myfile << "\n";
-  myfile.close();
+  // std::ofstream myfile;
+  // myfile.open("/home/shiyuan/Documents/ros_marsarm/rate.csv", std::ios::out|std::ios::app);
+  // myfile << "\n";
+  // myfile.close();
+  // myfile.open("/home/shiyuan/Documents/ros_marsarm/diff.csv", std::ios::out|std::ios::app);
+  // myfile << "\n";
+  // myfile.close();
+  // myfile.open("/home/shiyuan/Documents/ros_marsarm/time.csv", std::ios::out|std::ios::app);
+  // myfile << "\n";
+  // myfile.close();
+  // myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_trans.csv", std::ios::out|std::ios::app);
+  // myfile << "\n";
+  // myfile.close();
+  // myfile.open("/home/shiyuan/Documents/ros_marsarm/diff_rot.csv", std::ios::out|std::ios::app);
+  // myfile << "\n";
+  // myfile.close();
   // myfile.open("/home/shiyuan/Documents/ros_marsarm/workspace_max.csv", std::ios::out|std::ios::app);
   // myfile << "\n";
   // myfile.close();

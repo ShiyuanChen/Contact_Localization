@@ -74,7 +74,7 @@ void fullStatePFilter::createFullJoint(jointCspace b_Xprior[2]) {
 
     // Right Plane
     for (int j = 0; j < cdim; j ++) {
-      relativeConfig[j] = frontConfig[j] + b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
+      relativeConfig[j] = topConfig[j] + b_Xprior[0][pt] + b_Xprior[1][pt ++] * dist(rd);
     }
     baseConfig = tmpConfig;
     transFrameConfig(baseConfig, relativeConfig, rightPlaneConfig);
